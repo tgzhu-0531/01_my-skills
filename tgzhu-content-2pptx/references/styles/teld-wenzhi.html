@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1920, height=1080">
+<title>Warm Editorial 风格 - teld 适配</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Newsreader:opsz,wght@6..72,400;6..72,600;6..72,700&display=swap');
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#F9F6F0}
+.slide{width:1920px;height:1080px;position:relative;overflow:hidden;font-family:'Inter','微软雅黑',sans-serif;background:#F5F0E8}
+/* 暖色纸底 + 赤陶橙 + 近黑文字 */
+.accent-box{position:absolute;top:0;right:0;width:300px;height:100%;background:rgba(0,167,203,0.04);z-index:0}
+.ph{position:absolute;top:80px;left:80px;z-index:5}
+.ph h1{font-family:'Newsreader','宋体',serif;font-size:44px;font-weight:700;color:#191919;letter-spacing:0}
+.ph .hl{width:60px;height:2px;background:#00A7CB;margin-top:14px;margin-bottom:10px}
+.ph .sh{font-size:15px;font-weight:400;color:#666;font-family:'Inter','微软雅黑',sans-serif}
+.ph .label{color:#D97757;font-weight:600}
+/* 卡片 */
+.cardg{position:absolute;top:240px;left:80px;right:80px;display:flex;gap:20px;flex-wrap:wrap;z-index:5}
+.card{flex:1;min-width:300px;background:#FFF;border-radius:4px;padding:28px;box-shadow:0 1px 4px rgba(0,0,0,0.04)}
+.card h3{font-family:'Newsreader','宋体',serif;font-size:19px;font-weight:600;color:#00A7CB;margin-bottom:8px}
+.card p{font-size:14px;color:#4A4A4A;line-height:1.6;margin-bottom:3px}
+.card .hl{color:#D97757;font-weight:500;margin-top:8px;font-size:13px;border-top:1px solid #F0EBE0;padding-top:8px}
+.ci{font-family:'Newsreader',serif;font-size:13px;color:#00A7CB;margin-bottom:8px;font-weight:600;font-style:italic}
+.rw{display:flex;gap:20px;flex:100%}
+.cb{position:absolute;bottom:80px;left:80px;right:80px;border-top:1px solid #E8E2D4;padding-top:14px;z-index:5}
+.cb p{font-size:14px;color:#D97757;font-weight:400}
+/* 封面 */
+.cw{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:center;align-items:center;z-index:5}
+.cmt{font-family:'Newsreader','宋体',serif;font-size:72px;font-weight:700;color:#191919;letter-spacing:-1px}
+.cml{width:80px;height:2px;background:#00A7CB;margin:20px auto}
+.cms{font-size:24px;font-weight:300;color:#666;letter-spacing:6px;margin-bottom:36px}
+.cmtg{display:flex;gap:16px}
+.cmtg span{font-size:13px;color:#888;letter-spacing:2px;border:1px solid #E8E2D4;padding:6px 20px;border-radius:20px}
+.pn{position:absolute;bottom:40px;right:80px;font-size:11px;color:#CCC;z-index:10}
+/* 双栏 */
+.tc{position:absolute;top:240px;left:80px;right:80px;bottom:130px;display:flex;gap:24px;z-index:5}
+.col{flex:1;background:#FFF;border-radius:4px;padding:32px;box-shadow:0 1px 4px rgba(0,0,0,0.04)}
+.col h3{font-family:'Newsreader',serif;font-size:19px;font-weight:600;color:#00A7CB;margin-bottom:14px}
+.col ul{list-style:none}
+.col ul li{padding:8px 0;border-bottom:1px solid #F5F0E8;font-size:14px;color:#4A4A4A}
+/* 总结 */
+.sw{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:center;align-items:center;z-index:5}
+.st{font-family:'Newsreader',serif;font-size:52px;font-weight:700;color:#191919;margin-bottom:8px}
+.ss{font-size:20px;font-weight:300;color:#666;letter-spacing:4px;margin-bottom:40px}
+.lm{display:flex;gap:28px;margin-bottom:24px;flex-wrap:wrap;justify-content:center}
+.lm .ln{font-size:13px;font-weight:700;color:#00A7CB;letter-spacing:0;font-family:'Newsreader',serif}
+.lm .lt{font-size:12px;color:#888;margin-top:2px}
+.ls{color:#DDD;font-size:16px}
+.sq{font-size:18px;font-weight:400;color:#D97757;text-align:center;max-width:65%;line-height:1.6;font-family:'Newsreader','宋体',serif;border-top:1px solid #E8E2D4;padding-top:20px}
+</style>
+</head>
+<body>
+
+<div class="slide"><div class="accent-box"></div>
+  <div class="cw">
+    <div class="cmt">AI 重塑工作流</div>
+    <div class="cml"></div>
+    <div class="cms">理解AI · 实操AI · 驾驭AI</div>
+    <div class="cmtg"><span>AI 工程体系</span><span>五层总览</span><span>框架对比</span></div>
+  </div>
+  <div class="pn">P1 / 5</div>
+</div>
+
+<div class="slide"><div class="accent-box"></div>
+  <div class="ph"><h1>AI 工程体系</h1><div class="hl"></div><div class="sh"><span class="label">五层体系：</span>从 Prompt 到 Meta-Loop，五层嵌套的 AI 工程结构</div></div>
+  <div class="cardg">
+    <div class="rw">
+      <div class="card"><div class="ci">01</div><h3>Prompt</h3><p>怎么让模型听懂 — 指令、格式、示例</p><p class="hl">基础能力层</p></div>
+      <div class="card"><div class="ci">02</div><h3>Context</h3><p>该给模型什么信息 — RAG、Memory、MCP</p><p class="hl">知识增强层</p></div>
+      <div class="card"><div class="ci">03</div><h3>Harness</h3><p>怎样安全执行 — 规则、权限、验证</p><p class="hl">安全治理层</p></div>
+    </div>
+    <div class="rw">
+      <div class="card"><div class="ci">04</div><h3>Loop</h3><p>怎么跨轮次推进 — 触发、状态、重试</p><p class="hl">流程引擎层</p></div>
+      <div class="card"><div class="ci">05</div><h3>Meta-Loop</h3><p>怎么持续优化 — 评估、沉淀、回滚</p><p class="hl">进化管理层</p></div>
+    </div>
+  </div>
+  <div class="cb"><p>→ 五层是嵌套关系，后一层包含前一层</p></div>
+  <div class="pn">P2 / 5</div>
+</div>
+
+<div class="slide"><div class="accent-box"></div>
+  <div class="ph"><h1>传统研发 vs AI 协作</h1><div class="hl"></div><div class="sh"><span class="label">核心差异：</span>从执行者到把关人</div></div>
+  <div class="tc">
+    <div class="col"><h3>传统研发流程</h3><ul><li>手动调研数据源</li><li>手写爬虫脚本</li><li>手工清洗入库</li><li>逐页排版 PPT</li></ul></div>
+    <div class="col"><h3>AI 协作流程</h3><ul><li>AI 自动调研数据源</li><li>AI 编写采集脚本</li><li>自动清洗 + 校验</li><li>模板克隆自动生成</li></ul></div>
+  </div>
+  <div class="cb"><p>→ 人的角色从执行者变成了把关人</p></div>
+  <div class="pn">P3 / 5</div>
+</div>
+
+<div class="slide"><div class="accent-box"></div>
+  <div class="ph"><h1>三个行动建议</h1><div class="hl"></div><div class="sh"><span class="label">落地路径：</span>理解 · 实操 · 驾驭</div></div>
+  <div class="cardg" style="top:220px;gap:32px">
+    <div class="card"><div class="ci">A</div><h3>理解AI</h3><p>用五层工程体系建立认知地图</p><p class="hl">不追新名词，先建方法论</p></div>
+    <div class="card"><div class="ci">B</div><h3>实操AI</h3><p>校验比生成更重要</p><p class="hl">关键判断由人做</p></div>
+    <div class="card"><div class="ci">C</div><h3>驾驭AI</h3><p>沉淀比一次跑通更有价值</p><p class="hl">80% 自动 + 20% 人工微调</p></div>
+  </div>
+  <div class="cb"><p>→ 把可复用的流程封装为 Skill</p></div>
+  <div class="pn">P4 / 5</div>
+</div>
+
+<div class="slide"><div class="accent-box"></div>
+  <div class="sw">
+    <div class="st">真正重要的</div>
+    <div class="ss">不是追上每一个新名词</div>
+    <div class="lm">
+      <div><div class="ln">L1 Prompt</div><div class="lt">怎么说</div></div><div class="ls">|</div>
+      <div><div class="ln">L2 Context</div><div class="lt">看什么</div></div><div class="ls">|</div>
+      <div><div class="ln">L3 Harness</div><div class="lt">怎么安全做</div></div><div class="ls">|</div>
+      <div><div class="ln">L4 Loop</div><div class="lt">怎么持续推进</div></div><div class="ls">|</div>
+      <div><div class="ln">L5 Meta-Loop</div><div class="lt">怎么让系统变好</div></div>
+    </div>
+    <div class="sq">人定方向、设标准、做决策；AI 提方案、做执行、沉淀能力</div>
+  </div>
+  <div class="pn">P5 / 5</div>
+</div>
+
+</body>
+</html>
