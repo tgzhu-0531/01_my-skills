@@ -1,6 +1,6 @@
 ---
 name: tgzhu-content-2pptx
-description: "从IMA知识库/公众号链接/本地文件/粘贴内容中筛选指定资料，基于内容与听众角色，通过逐页交互确认生成PPT的完整工作流。支持teld风/锋芒风/文质风/商务风四种视觉风格。每一步都带着交互，用户确认后才推进。"
+description: "从IMA知识库/链接/本地文件/粘贴内容中筛选指定资料，基于内容与听众角色，通过逐页交互确认生成PPT的完整工作流。支持企业风/锋芒风/文质风/商务风四种视觉风格。每一步都带着交互，用户确认后才推进。"
 agent_created: true
 ---
 
@@ -8,9 +8,9 @@ agent_created: true
 
 ## 概述
 
-从多源内容（IMA 知识库 / 公众号链接 / 本地文件 / 粘贴内容）中筛选指定资料，基于内容提炼主题，按听众角色预设大纲规则生成 PPT 内容，逐页交互确认后生成 PPTX。
+从多源内容（IMA 知识库 / 链接 / 本地文件 / 粘贴内容）中筛选指定资料，基于内容提炼主题，按听众角色预设大纲规则生成 PPT 内容，逐页交互确认后生成 PPTX。
 
-支持 **4 种视觉风格**：teld 风（深蓝渐变）· 锋芒风（纯黑高对比）· 文质风（奶油纸暖色）· 商务风（白底深字）。
+支持 **4 种视觉风格**：企业风（深蓝渐变）· 锋芒风（纯黑高对比）· 文质风（奶油纸暖色）· 商务风（白底深字）。
 
 ## ⚠️ 强制约束
 
@@ -63,8 +63,7 @@ agent_created: true
 | 1\. **IMA 知识库**（推荐） | 从你的 IMA 个人知识库中选择已有文章/文件 | 弹出知识库列表让选 |
 | 2\. **提供链接** | 提供 `mp.weixin.qq.com/s/...` 公开链接 | AI 文字回复"请把链接发给我" |
 | 3\. **粘贴内容** | 直接把文字粘贴到对话中 | AI 文字回复"请把内容粘贴过来" |
-| 4\. **用示例大纲** | 使用 skill 自带的示例大纲快速起步 | 直接跳到弹窗 2 |
-| 5\. **本机文件地址** | 提供本地文件路径（多个文件/大文件/PDF 时用） | AI 文字回复"请提供文件路径" |
+| 4\. **本机文件地址** | 提供本地文件路径（多个文件/大文件/PDF 时用） | AI 文字回复"请提供文件路径" |
 
 **关键点：**
 - ❌ **不再弹第二个问题**让用户选择"输入链接/粘贴文字/输入文件路径"（选项冗余）
@@ -121,7 +120,6 @@ agent_created: true
 ### 注意
 
 - **必须先有内容才能推荐页数**，所以听众+页数放在"弹窗 2"
-- **选项 4（用示例大纲）** 时，弹窗 1 只问来源，内容框可跳过；弹窗 2 仍可调听众/页数
 - 用户在弹窗 2 接受推荐页数 → 直接生成大纲
 
 ### 产出
@@ -224,12 +222,12 @@ AI 工具无法从文章 Web 页面提取配图（只取文字）。策略：
 
 **选项：**
 
-1. **💎 teld 风**（深蓝渐变）— 默认，深蓝渐变底色 + 网格底纹 + 圆角卡片，匹配公司品牌
+1. **💎 企业风**（深蓝渐变）— 默认，深蓝渐变底色 + 网格底纹 + 圆角卡片，匹配公司品牌
 2. **🖤 锋芒风**（纯黑高对比）— 纯黑底 + 品牌青边框 + 巨号粗体，技术分享场景
 3. **🤎 文质风**（奶油纸暖色）— 奶油纸底 + 衬线字体 + 柔和阴影，培训文档场景
 4. **📊 商务风**（白底深字）— 白底深字咨询风格，商业汇报场景
 
-### 执行（teld 科技路线）— 模板克隆优先
+### 执行（企业路线）— 模板克隆优先
 
 > ⚠️ **核心技术原则：模板克隆是唯一可靠的样式统一方案，代码绘制不可控。**
 
@@ -242,12 +240,12 @@ AI 工具无法从文章 Web 页面提取配图（只取文字）。策略：
 
 **正确做法（2026-07-16 实战验证）：**
 
-1. **模板克隆**：`shutil.copy2(TEMPLATE_PATH, OUTPUT_PATH)` 克隆技能包内置模板 `references/teld-template.pptx`
+1. **模板克隆**：`shutil.copy2(TEMPLATE_PATH, OUTPUT_PATH)` 克隆技能包内置模板 `references/template.pptx`
    ```python
    # 模板路径应指向 skill 内部（不依赖项目根目录的外部文件）
    import os
    SKILL_DIR = os.path.dirname(os.path.abspath(__file__))
-   TEMPLATE_PATH = os.path.join(SKILL_DIR, "references/teld-template.pptx")
+   TEMPLATE_PATH = os.path.join(SKILL_DIR, "references/template.pptx")
    ```
 2. **删除范例页**：将模板自带的 4 页范例全部删除
 3. **封面占位符处理**：必须用 **XML 删除**方式彻底移除占位符节点，不能只 `shape.text=""`：
@@ -265,13 +263,13 @@ AI 工具无法从文章 Web 页面提取配图（只取文字）。策略：
        spTree.remove(sp)
    ```
 4. **封面布局**（全 textbox，不用占位符）：
-   - **标题**：y=0.4（与内容页统一），22pt Bold 白色左对齐，宽度 8.3in 避开右上 logo
+   - **标题**：y=0.4（与内容页统一），28pt Bold 白色左对齐，宽度 8.3in 避开右上 logo
    - **副标题**：y=2.5，28pt Bold 品牌青 #77FCFC 居中
    - **第二行小字**：y=3.2，14pt 灰色居中
    - **装饰线**：5in 宽 2pt 高，居中 y=3.8
    - **日期**：y=4.2，13pt 灰色居中
    - **QR 码**：底部（详见二维码章节）
-5. **内容页标题**：使用 `add_header()` 工具函数，所有标题统一在 **y=0.4（标题装饰带内部），22pt Bold**，与封面同位置
+5. **内容页标题**：使用 `add_header()` 工具函数，所有标题统一在 **y=0.4（标题装饰带内部），28pt Bold**，与封面同位置
 6. **内容页智能布局**（以 P2 为间距基准）：
    ```
    标题装饰线结束             y≈0.97
@@ -284,8 +282,8 @@ AI 工具无法从文章 Web 页面提取配图（只取文字）。策略：
    页面底部的留白区域用 **金句收尾**（14pt 金色 #C9A227 居中）。
 7. **字体设置**：所有中文字符必须用 `set_chinese_font(run)` 同时设置 `a:latin` + `a:ea` + `a:cs`
 8. **Bold 设置**：paragraph 级 + run 级双重设置
-9. **表格字号**：Header **12pt Bold**，Row **11pt**，行高 **0.42in**（按行数动态计算）
-10. **字号/颜色/坐标规范**：参考 `references/teld-design-spec.md`
+9. **表格规范**：详见下方「通用字号规范」「表格三大铁律」「垂直时间轴」三节（2026-07-28 统一为 表头14pt Bold / 数据行12pt / 行高按内容动态计算，旧值 12pt/11pt 已废弃）
+10. **字号/颜色/坐标规范**：参考 `references/biz-design-spec.md`
 11. **其他风格**：参考 `references/styles/README.md`
 
 **`add_header()` 函数参考：**
@@ -295,13 +293,13 @@ def add_header(slide, title):
        标题位置 y=0.4（标题装饰带内部），与封面统一
     """
     tf = tb_box(slide, 0.6, 0.4, 8.0, 0.5)
-    run_text(tf, title, 22, True, WHITE)
+    run_text(tf, title, 28, True, WHITE)
 ```
 
-**`add_qr()` (teld 专用) — 底中优先 → 底右备选：**
+**`add_qr()` (企业风专用) — 底中优先 → 底右备选：**
 ```python
-def add_qr_teld(slide, img_path):
-    """teld 模板专用 QR：底中优先 → 底右备选（永远不右上，右上已有 logo）"""
+def add_qr_biz(slide, img_path):
+    """企业模板专用 QR：底中优先 → 底右备选（永远不右上，右上已有 logo）"""
     positions = [
         (6.12, 5.55, 0.9, 0.9),     # 底中（优先）
         (11.5, 5.6, 0.85, 0.85),    # 底右（备选）
@@ -318,11 +316,11 @@ def add_qr_teld(slide, img_path):
     run_text(tf, label, 8, False, LIGHT_GRAY, PP_ALIGN.CENTER)
 ```
 
-### teld 内容区视觉规则（强制，huashu 哲学 | 2026-07-16 新增，仅 teld 风格生效）
+### 企业风内容区视觉规则（强制，huashu 哲学 | 2026-07-16 新增，仅 企业风生效）
 
-> ⚠️ **以下规则在 teld 风格下必须执行，不可跳过。** "增强"一词已修正为"强制"。
+> ⚠️ **以下规则在 企业风下必须执行，不可跳过。** "增强"一词已修正为"强制"。
 
-> 借鉴 huashu-design 的"反 slop"原则：**少框、分层、有视觉锚点**。以下规则只在 teld 风格生效，锋芒/文质/商务风忽略。
+> 借鉴 huashu-design 的"反 slop"原则：**少框、分层、有视觉锚点**。以下规则只在 企业风生效，锋芒/文质/商务风忽略。
 
 **1. 去框化原则**
 - 一个页面出现 **4+ 个矩形框**会显平淡、像清单 → 改为**纯排印分层**
@@ -387,7 +385,7 @@ def add_accent_bar_v(slide, x, y, h, color, width=Pt(2.5)):
 
 1. **从空白开始**：`Presentation()`，16:9 画布（不依赖任何模板）
 2. **每页设置纯黑背景**：`set_bg_black(slide)`，填充 `#000000`
-3. **版式选择**：全部用默认空白版式 `prs.slide_layouts[6]`（即"Blank"空白版式，0 占位符），**不能用 teld 模板的 Layout[6]**，因为那会带入 teld 品牌元素（Logo、装饰线等）
+3. **版式选择**：全部用默认空白版式 `prs.slide_layouts[6]`（即"Blank"空白版式，0 占位符），**不能用 企业模板的 Layout[6]**，因为那会带入 企业品牌元素（Logo、装饰线等）
 4. **封面布局**（全 textbox）：
    - **主标题**：y=2.0，**40pt Bold** 白色居中（巨号粗体）
    - **副标题**：y=3.4，22pt Bold 品牌青 #00A7CB 居中
@@ -474,7 +472,7 @@ def add_qr_fengmang(slide, img_path):
 - 加粗显示
 - 与正文 13pt 浅灰形成视觉对比
 
-**内容页间距基准（teld 风格）：**
+**内容页间距基准（企业风）：**
 ```
 标题装饰线结束              y≈0.97
 ↓ 间距 0.18in
@@ -485,12 +483,12 @@ def add_qr_fengmang(slide, img_path):
 页面底部金句收尾            14pt 金色居中
 ```
 
-**teld 内容区视觉规则（强制，huashu 哲学）：** 详见上方"teld 内容区视觉规则"小节——
+**企业风内容区视觉规则（强制，huashu 哲学）：** 详见上方"企业风内容区视觉规则"小节——
 去框化（4+ 框显平淡）、装饰线变淡 #66C5DC/1.5pt、子主题 16pt Bold teal、关键术语 20pt、顶部锚点固定 y=1.15 不移动、正文区整体居中、大数字 36pt 当视觉锚点、底部金句金色居中。
 
 **页面底部：**
 - 留白区域用 **金句收尾**（14pt 品牌金 #C9A227，居中）
-- QR 码：仅 P1 + Pn，底中优先 → 底右备选（teld 专用逻辑）
+- QR 码：仅 P1 + Pn，底中优先 → 底右备选（企业风专用逻辑）
 
 ### 无模板时的通用风格
 
@@ -563,7 +561,7 @@ PPT 生成完成后，**必须向用户提示文件位置**：
 
 ---
 
-## 公众号二维码 · 通用增强
+## 二维码 · 通用增强
 
 ### 资产
 
@@ -581,7 +579,7 @@ PPT 生成完成后，**必须向用户提示文件位置**：
 ### 替换为用户自己的二维码
 
 ```bash
-# 替换 assets/tgzhu_qrcode.jpg 为你自己的公众号二维码
+# 替换 assets/tgzhu_qrcode.jpg 为你自己的二维码
 # 建议：PNG 透明底、正方形、≥338×338 像素
 cp my_qrcode.jpg C:/Users/tgzhu/.workbuddy/skills/tgzhu-content-2pptx/assets/tgzhu_qrcode.jpg
 ```
@@ -612,15 +610,15 @@ def _overlaps(slide, x, y, w, h):
 
 | 风格 | 函数 | 规则 |
 |:-----|:-----|:-----|
-| **teld 风** | `add_qr_teld()` | **底中(6.12,5.55)→底右(11.5,5.6)**，永远不进右上（右上已有 logo） |
+| **企业风** | `add_qr_biz()` | **底中(6.12,5.55)→底右(11.5,5.6)**，永远不进右上（右上已有 logo） |
 | **锋芒风** | `add_qr_fengmang()` | 固定底部居中 (6.12, 5.85) |
 | **文质风/商务风** | `add_qr_wenzhi()` | 底中→底右→右上智能避让 |
 
-**teld 风专用 QR 函数（底中优先 → 底右备选）：**
-teld 模板右上已有 logo + 品牌组，**QR 码永远不进入右上区域**。
+**企业风专用 QR 函数（底中优先 → 底右备选）：**
+企业模板右上已有 logo + 品牌组，**QR 码永远不进入右上区域**。
 ```python
-def add_qr_teld(slide, img_path):
-    """teld 专用：底中优先 → 底右备选"""
+def add_qr_biz(slide, img_path):
+    """企业风专用：底中优先 → 底右备选"""
     positions = [
         (6.12, 5.55, 0.9, 0.9),     # 底中（优先）
         (11.5, 5.6, 0.85, 0.85),    # 底右（备选）
@@ -660,10 +658,10 @@ def add_qr_fengmang(slide, img_path):
 
 ### 内置依赖（解压即用）
 此技能包自带以下资源，无需额外安装：
-- `references/teld-template.pptx` — **teld 风格模板**（含 Logo+渐变+品牌线），模板克隆必须使用此路径
+- `references/template.pptx` — **企业风模板**（含 Logo+渐变+品牌线），模板克隆必须使用此路径
 - Mck PPT Design Engine（67 种布局、三层防损）
-- teld 锋芒风 / 文质风 HTML 模板
-- teld 品牌规范、示例内容
+- biz 锋芒风 / 文质风 HTML 模板
+- 企业品牌规范、示例内容
 
 ### 外部依赖（需单独安装）
 
@@ -682,15 +680,15 @@ def add_qr_fengmang(slide, img_path):
 
 - `examples/ai-agent-engineering-share.yaml` — **结构参考**（非内容源），展示一套完整的大纲结构示例
 - `examples/outline.md` + `examples/content.md` — **模板文件（只读）**，完整版13页大纲与内容稿
-- `references/teld-design-spec.md` — teld 模板设计规格（品牌色/字体/版式/坐标/字号）
+- `references/biz-design-spec.md` — 企业模板设计规格（品牌色/字体/版式/坐标/字号）
 
 ### 视觉风格（4 套内置）
 
 | 风格 | 文件 | 场景 |
 |:----|:----|:----|
-| 💎 **teld 风**（深蓝渐变）| `references/styles/` + `slide-deck/test-hybrid/` | 默认，公司正式汇报 |
-| 🖤 **锋芒风**（纯黑高对比）| `references/styles/teld-fengmang.html` | 技术分享、产品发布 |
-| 🤎 **文质风**（奶油纸暖色）| `references/styles/teld-wenzhi.html` | 内部培训、文档指南 |
+| 💎 **企业风**（深蓝渐变）| `references/styles/` + `slide-deck/test-hybrid/` | 默认，公司正式汇报 |
+| 🖤 **锋芒风**（纯黑高对比）| `references/styles/biz-fengmang.html` | 技术分享、产品发布 |
+| 🤎 **文质风**（奶油纸暖色）| `references/styles/biz-wenzhi.html` | 内部培训、文档指南 |
 | 📊 **商务风**（白底深字）| `references/mck-ppt/` (MckEngine 67 种布局) | 商业汇报、战略提案 |
 
 详细风格说明见 `references/styles/README.md`。
@@ -715,15 +713,179 @@ def add_qr_fengmang(slide, img_path):
 - **内容页必须用 Layout[6]（4_标题幻灯片）**，自带 logo+标题线，Layout[4]（空白）无品牌元素
 - **所有页标题统一 y=0.4，22pt Bold**，封面与内容页一致
 - **标题线→金句间距 0.18in，金句→表格 0.55in**，全篇对齐 P2 基准
-- **teld QR 规则**：底中优先→底右备选，永远不进入右上区域（右上已有 logo）
-- **表格字号**：Header 12pt Bold，Row 11pt，行高 0.42in
-- **teld 视觉增强（仅 teld 风格）**：去框化（4+ 矩形框显平淡→纯排印分层）；装饰线变淡 #66C5DC/1.5pt；子主题 16pt Bold teal；关键术语 20pt teal；顶部锚点金句固定 y=1.15 不因"居中"移动；正文块整体上下左右居中；大数字 36pt teal 当视觉锚点；底部金句金色居中无竖线
-- **teld 常见误读**：用户说"线去掉"=删整条线（不是去边框）；"正文居中"=移动正文块（不是移动顶部锚点金句）
+- **企业风 QR 规则**：底中优先→底右备选，永远不进入右上区域（右上已有 logo）
+- **表格字号**：Header **14pt Bold**，Row **12pt**，行高 **0.42in**（按行数动态计算）
+- **通用字号规范（2026-07-28 新增，全部风格生效）**：正文内容区 **12pt**，表格标题 **14pt**，副标题（→开头金句）**16pt**，底部金句 **14pt**。此规则适用于 企业风/锋芒风/文质风/商务风四风格
+- **表格三大铁律（2026-07-28 新增，全部风格生效）**：
+  1. **垂直居中**：所有 cell 必须 `cell.vertical_anchor = MSO_ANCHOR.MIDDLE`，不得 top 对齐
+  2. **智能列宽**：禁止等分列宽。按内容性质指定 `col_widths`，短列给窄空间（如时间 1.2in），长列给宽空间（如事件描述 6.0in）
+  3. **深底表格配色**：表头与数据行**同底色**（如 企业风用 #1A2D42 深蓝，与模板卡底同色），仅通过**文字颜色 + 加粗**区分层级（企业风表头文字 #66C5DC 淡青 Bold，数据行白色）。**禁止**用 PowerPoint 默认白/灰交替样式，也禁止表头用高亮品牌色（#00A7CB）导致与暗底不协调
+- **企业风视觉增强（仅 企业风）**：去框化（4+ 矩形框显平淡→纯排印分层）；装饰线变淡 #66C5DC/1.5pt；子主题 16pt Bold teal；关键术语 20pt teal；顶部锚点金句固定 y=1.15 不因"居中"移动；正文块整体上下左右居中；大数字 36pt teal 当视觉锚点；底部金句金色居中无竖线
+- **企业风常见误读**：用户说"线去掉"=删整条线（不是去边框）；"正文居中"=移动正文块（不是移动顶部锚点金句）
+- **双栏标题对等（2026-07-28 新增，全部风格生效）**：双栏内容页（如 P3 左栏"FDE=..."/右栏"核心区别"）的左右两栏标题必须**对等**——同字号（**16pt Bold 风格色**）、同 y 起始坐标、且左栏与右栏都用 `run_text()` 写首段（**不得**左栏用 run_text、右栏用 add_para 追加，否则视觉层级错位）。此规则是「左右栏分隔线」的前提
+- **左右栏分隔线（2026-07-28 新增，全部风格生效）**：双栏内容页（如 P3 定义+区别）的中间 gutter 可加一根极淡竖线，暗示"左右两个独立区块"。不得用明显粗线或亮色线。按风格自适应配色：
+  ```python
+  # 位置：左右栏 gutter 正中（典型 6.8in）
+  # 长度：与两栏内容区同高（典型 1.85 → 6.2）
+  # 样式：极细 0.75pt 实线，connector STRAIGHT
+  line = slide.shapes.add_connector(MSO_CONNECTOR.STRAIGHT,
+      Inches(6.8), Inches(1.85), Inches(6.8), Inches(6.2))
+  line.line.color.rgb = STYLE_SEP_COLOR
+  line.line.width = Pt(0.75)
+  ```
+  | 风格 | 分隔线色值 |
+  |:----|:----------|
+  | 企业风 | #1F2A38（深蓝背景+1档） |
+  | 锋芒风 | #1F1F1F（纯黑背景+半档） |
+  | 文质风 | #C9C2B0（奶油纸+1档） |
+  | 商务风 | #D8D8D8（白底浅灰） |
+- **文质风副标题/顶部金句色（2026-07-28 修正）**：文质风的副标题（封面副标题）与顶部金句（"→ ..."开头）原用暖棕橙 `#BE6E1E`，经对比验证在奶油纸底上偏"锋芒感"、与主标题深棕抢戏。统一改为**深金褐 `#8A6D2F`**——与金色装饰点缀同色系但饱和度更低，柔和克制，符合文质风书卷气。金色仍仅用于：时间轴圆点、竖线、封面装饰线、标题下划线等极小面积点缀。全部风格的副标题/顶部金句色由各自 `ORANGE`（或等价）常量控制，换风格只改该常量即可。
+- **文本框内部边距强制归零（2026-07-23 新增）**：所有 `tb()` 必须设置以下属性，否则文本浮在框中间、视觉松散：
+  ```python
+  tf.margin_top = Pt(0); tf.margin_bottom = Pt(0)
+  tf.margin_left = Pt(0); tf.margin_right = Pt(0)
+  tf.auto_size = MSO_AUTO_SIZE.NONE
+  tf.vertical_anchor = MSO_ANCHOR.TOP
+  ```
+  需导入：`from pptx.enum.text import PP_ALIGN, MSO_ANCHOR, MSO_AUTO_SIZE`
+- **段落行距强制设置（2026-07-23 新增）**：`rt()` 和 `ap()` 必须显式设 `p.line_spacing = 1.2`（1.2 倍字号，专业 PPT 标准间距）。默认 PowerPoint 单倍行距过紧（0-2pt），1.2 倍提供 20% 额外空间、视觉舒适。例如 14pt 正文实际行高 16.8pt
+- **底部金句位置 y=7.0（2026-07-23 新增）**：距底端 0.5in、紧贴页脚上方，14pt Bold 金色居中。原 y=6.6 偏远
+- **文本框不超出页面边界（2026-07-23 新增）**：页面 16:9 宽 13.332in、高 7.5in。所有 `tb(s, x, y, w, h)` 必须满足 `x + w ≤ 13.332` 且 `y + h ≤ 7.5`。左栏（x=0.6）最大 w=12.73；右栏（x=6.5）最大 w=6.83。超出会导致内容延伸到画布外，PowerPoint 显示为漂浮文本框
+- **多值卡片布局决策（2026-07-28 新增 · 全部风格生效）**：一页里出现多个并列/递进的"卡片类内容"（如四大价值、三大能力）时，**不要默认四列平铺**，按内容量二选一：
 
-### 锋芒风
+  | 条件 | 布局 | 顺序感 | 边界处理 |
+  |:--|:--|:--|:--|
+  | 每张卡片内容**多**（如标题+多行描述） | **阶梯式**：卡片从上到下垂直堆叠 | 序号 01-N（左/上角） | **不加箭头**，序号已暗示递进 |
+  | 每张卡片内容**少**（如标题+1行描述） | **2×2 网格**：四块矩阵 | 序号 01-N（左上角） | **淡阴影 3D 微立体**，不用硬边框 |
+  | 特殊页需强调流向 | 阶梯式 + 箭头 | 箭头 + 序号 | — |
+
+  **规则要点：**
+  1. **布局由"内容量"决定，不是由"关系"决定**：并列或递进都用同一套布局逻辑；顺序感统一靠 01-N 序号暗示，不依赖位置或箭头。
+  2. **有箭头时必须加大加宽**（实测细箭头视觉弱）：箭头 `line_width ≥ Pt(3)`、三角尺寸明显，避免"看不出是箭头"。
+  3. **2×2 的 3D 阴影参数**（python-pptx 设 shape 的 `shadow`）：`blur ≈ Pt(10)`、`offset = Pt(3)`、颜色淡灰（企业风/锋芒风 `#000000`@50%、文质 `#8A7E6E`@40%、商务 `#CCCCCC`@60%）、无硬边框（`line.fill.background()` 或 `ln` 不画）。阴影制造悬浮层次，比 0.75pt 浅灰边框更现代。
+  4. **阶梯式纵向高度约束**：4 张垂直卡片+间距易超版面；若单卡内容真的很多（3-4 行），压缩文字或合并为 3 张，不要硬塞 4 张。
+  5. **大数字（01-04）**：作为卡片内视觉锚点，字号 28-36pt 风格色，与标题、描述形成「数字→标题→描述」三级层次。
+
+### 「小标题 + 正文」单位间距（2026-07-29 新增 · 全部风格生效）
+
+**适用场景：** 任何"小标题 + 一段正文"或"标题 + 描述"并列结构（P3 双栏小节、P10 编号列表等），不管在左栏/右栏/单页列表里都适用此规则。
+
+**规则：单位内紧凑、单位间拉开。**
+- **单位内**（小标题 → 紧跟的正文/描述）：`space_after = Pt(4)`，紧凑
+- **单位间**（正文结尾 → 下一个小节标题）：`space_after = Pt(24)`，合计 28pt 视觉间隔
+
+**应用示例：**
+```python
+# ❌ 错的：单位内 8pt，单位间 10pt（单位内反而更宽）
+add_para(tfR, "售前", 14, True, WHITE, space=8)
+add_para(tfR, "只出方案...", 12, False, BODY_GRAY, space=10)
+
+# ✅ 对的：单位内 4pt，单位间 24pt（块儿紧凑、块间宽松）
+add_para(tfR, "售前", 14, True, WHITE, space=4)
+add_para(tfR, "只出方案...", 12, False, BODY_GRAY, space=24)
+```
+
+**最后一条独立元素**（如 "FDE ≠ 售前/实施/驻场外包" 这类收尾注脚）：`space=0`，不强制 24pt 间隔。
+
+**栏内标题块到首个内容单位的间隔（2026-07-29 新增 · 全部风格生效）**：当一栏（或一块）先放一个栏标题（如"FDE = Forward Deployed Engineer / 前线部署工程师"或"核心区别"），再列内容小节单位时，**栏标题最后一项到第一个内容小节标题**之间用 `space=24`，与单位间间隔保持一致，避免标题与正文"糊"在一起。
+
+**卡片标题 → 卡片内容间距（2026-07-29 新增 · 全部风格生效）**：当标题出现在卡片/盒子类方形容器的顶部（如 P8 Echo/Delta 卡片、P9 2×2 能力卡），标题与紧随的正文之间使用 `space_after = Pt(14)`。这是 4pt（普通标题）与 24pt（单位间）之间的折中档，视觉上形成更清晰的标题区域感。注意这是 `run_text` 返回的 paragraph 对象上显式覆写。
+
+```python
+# 覆写 run_text 默认 4pt → 卡片内 14pt
+p = run_text(tf, "Echo · 部署策略师", 20, True, TELD_BLUE)
+p.space_after = Pt(14)
+```
+
+**`run_text()` 默认 space_after = Pt(4)`（2026-07-29 新增 · 全部风格生效）**：所有首段标题写入时强制 `space_after=Pt(4)`，确保单位内紧凑。这条加在 `run_text()` 函数内部，每个用 run_text 写出的标题段落自动获得 4pt 收窄。覆写后变成卡片内部 14pt。
+
+**底部金句（`add_bottom_gold`）`PP_ALIGN.CENTER`（2026-07-29 新增）**：所有内容页底部金句使用 `PP_ALIGN.CENTER` 居中显示，取代旧的 LEFT。函数实现即为居中。
+
+**卡片标题规则（P8/P9，2026-07-29 新增 · 全部风格生效）**：置于卡片/盒子顶部的标题**段落居中**（`PP_ALIGN.CENTER`），正文保持左对齐。标题字号 20pt Bold，正文 14pt。小标题标签（如"背景："、"职责："）用**品牌青加粗**作前缀锚点。
+
+**卡片宽度智能计算（P9 2×2，2026-07-29 新增 · 全部风格生效）**：对 2×2 网格卡片，以最长正文的字符数 * (14pt ÷ 72in/pt) ÷ 2（目标行数）+ 0.39in（左右边距）计算统一宽度，四舍五入到 0.5in，4-6in 钳位，整组居中。代码示例：
+```python
+cw = max_chars * (14 / 72) / 2 + 0.39
+cw = min(max(round(cw * 2) / 2, 4.0), 6.0)
+x0 = (13.333 - cw * 2 - 0.18) / 2  # 整组居中
+```
+
+**QR 码规则（2026-07-29 修正）：** 仅 P1（封面）+ Pn（最后一页）放二维码，尺寸 1.0-1.3in，底中优先。原文 P10 二维码已移除。
+
+### 垂直时间轴（2026-07-28 新增 · 全部风格生效）
+
+**适用场景：** 按时间线推进的事件内容（6 个以内），替代表格避免"行间留白"问题。
+
+**结构定义：**
+```
+左侧竖线（品牌色 + 底部箭头朝下）→ 跨内容区上下延伸
+   │
+每个事件：圆点（品牌青实心）
+         日期（14pt Bold 风格色）→ 紧贴圆点右侧
+         事件描述（12pt 白色/浅色）
+         关键数字徽章（圆角矩形 + 风格色字）— 仅含关键数字的事件
+```
+
+**布局算法：基于内容占高 + 整体居中：**
+```python
+H_NO_BADGE = 0.45   # 无徽章事件占高
+H_BADGE    = 0.75   # 有徽章事件占高
+GAP        = 0.15   # 事件间缓冲
+
+event_heights = [H_BADGE if badge else H_NO_BADGE for _, _, badge in events]
+total_h = sum(event_heights) + GAP * (len(events) - 1)
+
+# 内容区：副标题底(1.7) → 底部金句顶(6.8)
+start_y = 1.7 + (6.8 - 1.7 - total_h) / 2
+
+# 竖线超出内容区上下
+line_top = start_y - 0.35
+line_bottom = start_y + total_h + 0.55  # 含箭头长度
+```
+
+**按风格配色映射（2026-07-28 强制）：**
+
+| 元素 | 企业风 | 锋芒风 | 文质风 | 商务风 |
+|:----|:-------|:------|:------|:------|
+| 竖线/圆点 | #00A7CB | #00A7CB | #C9A227 | #384F63 |
+| 日期文字 | #66C5DC 淡青 | #00A7CB 青 | #C9A227 金 | #00A7CB 青 |
+| 事件描述 | #FFFFFF 白 | #CCCCCC 灰 | #333333 深灰 | #333333 深灰 |
+| 徽章底色 | #0F2A38 | #1F2A2E | #EFEBE2 | #F2F5F6 |
+| 徽章文字 | #66C5DC 淡青 | #00A7CB 青 | #C9A227 金 | #00A7CB 青 |
+| 徽章边框 | #00A7CB | #1F2A2E | #C9A227 | #F2F5F6 |
+
+**实现函数参考（企业风示例）：**
+```python
+def add_arrow_line(slide, x, y1, y2, color, width=Pt(2.5)):
+    """竖线 + 底部箭头朝下（XML tailEnd triangle）"""
+    line = slide.shapes.add_connector(MSO_CONNECTOR.STRAIGHT,
+        Inches(x), Inches(y1), Inches(x), Inches(y2))
+    line.line.color.rgb = color; line.line.width = width
+    ln = line.line._get_or_add_ln()
+    tailEnd = etree.SubElement(ln, qn('a:tailEnd'))
+    tailEnd.set('type', 'triangle'); tailEnd.set('w', 'med'); tailEnd.set('len', 'med')
+    return line
+
+def add_dot(slide, x, y, r=0.07, color=BIZ_BLUE):
+    """小圆点（add_shape OVAL）"""
+    dot = slide.shapes.add_shape(MSO_SHAPE.OVAL,
+        Inches(x-r), Inches(y-r), Inches(r*2), Inches(r*2))
+    dot.fill.solid(); dot.fill.fore_color.rgb = color
+    dot.line.fill.background(); _clean_shape(dot)
+
+def add_badge(slide, x, y, text, w=2.8, h=0.28, bg=BADGE_BG, txt_color=MUTED_TEAL, border=BIZ_BLUE):
+    """关键数字徽章：圆角矩形 + 居中青字"""
+    rect = slide.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE,
+        Inches(x), Inches(y), Inches(w), Inches(h))
+    rect.fill.solid(); rect.fill.fore_color.rgb = bg
+    rect.line.color.rgb = border; rect.line.width = Pt(0.5)
+    _clean_shape(rect)
+    tf = tb_box(slide, x, y, w, h, anchor=MSO_ANCHOR.MIDDLE)
+    run_text(tf, text, 11, True, txt_color, PP_ALIGN.CENTER)
+```
 - **锋芒风无现成模板**，从空白 Presentation() 构建，每页手动 set_bg_black(slide)
-- **版式**：统一用 `prs.slide_layouts[6]`（空白版式"Blank"），封面也用它。**不可用 teld 模板的 Layout[6]**，否则带入品牌元素
-- **标题**：28pt Bold 白色 + teal 下划线（不是 teld 的 22pt）
+- **版式**：统一用 `prs.slide_layouts[6]`（空白版式"Blank"），封面也用它。**不可用 企业模板的 Layout[6]**，否则带入品牌元素
+- **标题**：28pt Bold 白色 + teal 下划线（不是 企业风的 22pt）
 - **封面主标题**：40pt Bold 白色居中
 - **表格表头**：底色 #1F2A2E（贴近黑底），文字居中，分组行 #151515，普通行 #0A0A0A
 - **配色层级**：teal #00A7CB 只做装饰线/子主题/大数字，不要大面填充

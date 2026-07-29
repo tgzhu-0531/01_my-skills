@@ -1,6 +1,6 @@
 # 特来电 PPT 模板 · 设计规格（嵌入式参考）
 
-> 合并自 `teld-ppt-template-skill`，供 `ima-to-ppt` 自闭环使用。
+> 合并自 `biz-ppt-template-skill`，供 `ima-to-ppt` 自闭环使用。
 
 ## 品牌色
 

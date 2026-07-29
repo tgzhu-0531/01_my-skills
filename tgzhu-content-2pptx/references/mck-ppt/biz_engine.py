@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
-Teld Engine — 混合方案B
-模板克隆（保留品牌区） + 内容布局 + teld 配色
+Biz Engine — 混合方案B
+模板克隆（保留品牌区） + 内容布局 + 企业配色
 基于 Mck-ppt-design-skill 的布局算法适配
 """
 import os, shutil, zipfile
@@ -14,13 +14,13 @@ from pptx.oxml.ns import qn
 from lxml import etree
 
 # ═══════════════════════════════════════════
-# teld 品牌色
+# 企业品牌色
 # ═══════════════════════════════════════════
-TELD_PRIMARY = RGBColor(0x00, 0xA7, 0xCB)
-TELD_DARK    = RGBColor(0x38, 0x4F, 0x63)
-# teld 风格：内容卡底用深蓝（与模板的深色协调），文字用白色
-TELD_CARD_BG = RGBColor(0x1A, 0x2D, 0x42)   # 深蓝卡底
-TELD_CARD_BORDER = RGBColor(0x00, 0xA7, 0xCB)  # 品牌青边框
+BIZ_PRIMARY = RGBColor(0x00, 0xA7, 0xCB)
+BIZ_DARK    = RGBColor(0x38, 0x4F, 0x63)
+# 企业风：内容卡底用深蓝（与模板的深色协调），文字用白色
+BIZ_CARD_BG = RGBColor(0x1A, 0x2D, 0x42)   # 深蓝卡底
+BIZ_CARD_BORDER = RGBColor(0x00, 0xA7, 0xCB)  # 品牌青边框
 WHITE        = RGBColor(0xFF, 0xFF, 0xFF)
 LIGHT_TEXT   = RGBColor(0xE5, 0xE5, 0xE5)
 GOLD         = RGBColor(0xC9, 0xA2, 0x27)
@@ -30,9 +30,9 @@ MED_GRAY     = RGBColor(0x66, 0x66, 0x66)
 LINE_GRAY    = RGBColor(0xCC, 0xCC, 0xCC)
 BG_GRAY      = RGBColor(0xF2, 0xF2, 0xF2)
 NAVY         = RGBColor(0x05, 0x1C, 0x2C)
-TELD_GOLD    = RGBColor(0xC9, 0xA2, 0x27)
-TELD_ACCENT  = RGBColor(0x00, 0xAF, 0xD2)
-TELD_ORANGE  = RGBColor(0xF7, 0x96, 0x46)
+BIZ_GOLD    = RGBColor(0xC9, 0xA2, 0x27)
+BIZ_ACCENT  = RGBColor(0x00, 0xAF, 0xD2)
+BIZ_ORANGE  = RGBColor(0xF7, 0x96, 0x46)
 
 # ═══════════════════════════════════════════
 # 布局常量（来自 Mck Engine）
@@ -150,10 +150,10 @@ def full_cleanup(outpath):
     os.replace(tmppath, outpath)
 
 # ═══════════════════════════════════════════
-# TeldEngine
+# BizEngine
 # ═══════════════════════════════════════════
 
-class TeldEngine:
+class BizEngine:
     """基于模板克隆的混合布局引擎。"""
     
     def __init__(self, template_path, output_path, total_slides=30):
@@ -201,7 +201,7 @@ class TeldEngine:
             p = tf.paragraphs[0]; p.alignment = PP_ALIGN.CENTER
             r = p.add_run(); r.text = subtitle
             r.font.size = Pt(36); r.font.bold = True
-            r.font.color.rgb = TELD_ACCENT; r.font.name = '微软雅黑'
+            r.font.color.rgb = BIZ_ACCENT; r.font.name = '微软雅黑'
             set_ea_font(r, '微软雅黑')
         print(f"  ✓ 封面: {title}")
         return s
@@ -214,14 +214,14 @@ class TeldEngine:
         sub_top = Inches(0.95)
         if subtitle:
             add_text(s, Inches(0.46), sub_top, Inches(8.6), Inches(0.4), subtitle,
-                     font_size=Pt(14), font_color=TELD_PRIMARY, bold=True,
+                     font_size=Pt(14), font_color=BIZ_PRIMARY, bold=True,
                      font_name='微软雅黑')
         # 内容区从模板品牌线下方开始
         y = Inches(1.55)
         if lines:
             # 深蓝卡底 + 左侧品牌青细线作装饰（去掉顶部分隔线）
-            add_rect(s, Inches(0.46), y, Inches(12.4), Inches(4.8), TELD_CARD_BG)
-            add_rect(s, Inches(0.46), y, Pt(3), Inches(4.8), TELD_CARD_BORDER)
+            add_rect(s, Inches(0.46), y, Inches(12.4), Inches(4.8), BIZ_CARD_BG)
+            add_rect(s, Inches(0.46), y, Pt(3), Inches(4.8), BIZ_CARD_BORDER)
             normal = [l for l in lines if not l.startswith('→')]
             highlight = [l for l in lines if l.startswith('→')]
             if normal:
@@ -247,11 +247,11 @@ class TeldEngine:
         cx1 = Inches(0.46); cx2 = Inches(0.46) + cw + Inches(0.4)
         for cx, ct, ci in [(cx1, col1_title, col1_items), (cx2, col2_title, col2_items)]:
             # 卡底：左边缘一道品牌青细线（左侧标识）作装饰
-            add_rect(s, cx, cy, cw, Inches(4.8), TELD_CARD_BG)
-            add_rect(s, cx, cy, Pt(3), Inches(4.8), TELD_CARD_BORDER)
+            add_rect(s, cx, cy, cw, Inches(4.8), BIZ_CARD_BG)
+            add_rect(s, cx, cy, Pt(3), Inches(4.8), BIZ_CARD_BORDER)
             # 列标题：品牌青大字号
             add_text(s, cx + Inches(0.3), cy + Inches(0.2), cw - Inches(0.4), Inches(0.5),
-                     ct, font_size=Pt(18), font_color=TELD_PRIMARY, bold=True,
+                     ct, font_size=Pt(18), font_color=BIZ_PRIMARY, bold=True,
                      font_name='微软雅黑')
             # 列表项：浅灰文字，每项前加圆点
             for i, item in enumerate(ci if isinstance(ci, list) else [ci]):

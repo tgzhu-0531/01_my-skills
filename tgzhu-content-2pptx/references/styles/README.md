@@ -1,18 +1,18 @@
-# teld 风格体系
+# 企业风格体系
 
-teld 标准模板目前内置 **3 套视觉风格**，在 `ima-to-ppt` Step 4（选模板）时供用户选择：
+企业标准模板目前内置 **3 套视觉风格**，在 `ima-to-ppt` Step 4（选模板）时供用户选择：
 
 ---
 
-## 💎 teld 风（深蓝渐变）
+## 💎 企业风（深蓝渐变）
 
 | 属性 | 值 |
 |:----|:----|
-| **风格来源** | Huashu Dark + teld 模板 |
+| **风格来源** | Huashu Dark + 企业模板 |
 | **适用场景** | 公司正式汇报、对外展示、品牌统一 |
 | **视觉DNA** | 深蓝渐变 + 网格底纹 + 光晕 + 圆角卡片 + 品牌水印 |
 
-**参考文件：** `slide-deck/test-hybrid/teld-standard-template.html`
+**参考文件：** `slide-deck/test-hybrid/biz-standard-template.html`
 
 ---
 
@@ -24,7 +24,7 @@ teld 标准模板目前内置 **3 套视觉风格**，在 `ima-to-ppt` Step 4（
 | **适用场景** | 技术分享、产品发布、对外汇报、高对比演示 |
 | **视觉DNA** | 纯黑底 + 品牌青强调 + 巨号粗体 + 硬边1px边框 |
 
-**参考文件：** `references/styles/teld-fengmang.html`
+**参考文件：** `references/styles/biz-fengmang.html`
 
 ---
 
@@ -36,7 +36,7 @@ teld 标准模板目前内置 **3 套视觉风格**，在 `ima-to-ppt` Step 4（
 | **适用场景** | 内部培训、文档指南、调研报告、教材 |
 | **视觉DNA** | 奶油纸底 + 品牌青强调 + 衬线字体 + 柔和阴影 |
 
-**参考文件：** `references/styles/teld-wenzhi.html`
+**参考文件：** `references/styles/biz-wenzhi.html`
 
 ---
 
