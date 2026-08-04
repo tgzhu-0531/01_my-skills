@@ -318,13 +318,17 @@ def timeline(slide, items, emphasis_teal=None, emphasis_amber=None, n=None, tota
     elif n and total:
         add_page_number(slide, n, total, WEN_MUTE)
 
-def two_column(slide, left, right, n=None, total=None, h=4.1, gold=None):
-    """双栏：公共骨架 layout_two_column（透明底+青边框）。"""
+def two_column(slide, left, right, n=None, total=None, h=4.1, gold=None, notes=None):
+    """双栏：公共骨架 layout_two_column（透明底+青边框）。
+
+    notes: [左结论, 右结论] 可选，提供则在各栏底部青色结论 + 锚定卡底分隔线
+    （与 card_grid 的 hl 同语言、同源机制）。"""
     slide.background.fill.solid()
     slide.background.fill.fore_color.rgb = WEN_BG
     _accent_box(slide)
     ye = 6.10 if gold else 6.30
-    layout_two_column(slide, WENZHI_SKIN, {"columns": [left, right]}, y0=2.30, y_end=ye)
+    layout_two_column(slide, WENZHI_SKIN, {"columns": [left, right]},
+                      y0=2.30, y_end=ye, notes=notes)
     if gold:
         bottom_gold(slide, gold, n=n, total=total)
     elif n and total:

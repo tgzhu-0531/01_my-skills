@@ -857,12 +857,19 @@ def validate_deck(path, qr_on_cover=True, bg_colors=None, verbose=True):
     return ok, rep
 
 def fmt_date_5digit(t):
-    """日期统一 5 位：4/23 → 04/23（已 5 位则保持）。无法解析时原样返回。"""
-    try:
-        m, d = t.split('/')
-        return f"{int(m):02d}/{int(d):02d}"
-    except Exception:
-        return t
+    """日期统一 5 位：4/23 → 04/23；8.31 → 08.31（已 5 位则保持）。
+    兼容 '.' 与 '/' 分隔；带后缀（如 '8.31 前'）仅格式化日期部分。无法解析时原样返回。"""
+    s = str(t).strip()
+    head, tail = (s.rsplit(" ", 1) if " " in s else (s, ""))
+    tail = (" " + tail) if tail else ""
+    for sep in (".", "/"):
+        if sep in head:
+            try:
+                m, d = head.split(sep)
+                return f"{int(m):02d}{sep}{int(d):02d}{tail}"
+            except Exception:
+                pass
+    return s
 
 # ═══════════════════════════════════════════
 # 字体度量（可移植 / 跨机器：克隆后任意环境均可跑）
@@ -1355,100 +1362,129 @@ def layout_card_grid(slide, skin, cards, cols=2, y0=1.88, y_end=6.45,
       ① 序号 tag（固定 22pt 粗·强调色·左上，全场最大作主标识）与 标题 title（固定 14pt 粗·标题色）
          **同行、MIDDLE 垂直居中**（序号占 NUM_W 独立框、已收窄避免推远标题，标题紧随其后）；
       ② 正文 lines（固定 12pt 灰·左对齐·"·" 前缀 bullet·行距 1.35 宽松·段后 0.10″ 呼吸）；
-      ③ 分隔线（隐约暗色退背景层，正文↔结论间，跟在正文之后，不写死到卡底）；
+      ③ 分隔线（隐约暗色退背景层，正文↔结论间，**锚定卡底固定偏移**——`div_y = hl_y - CONCL_GAP`，与 two_column 同源；与本卡 bullet 行数解耦 → 同行所有卡分隔线绝对对齐）；
       ④ 结论 hl（固定 14pt 强调色·居中·加粗，**锁死 14、禁 auto-fit 13**；受 _guard_one_line 硬规则约束**禁止换行**）。
-    框高机制：ch = band_h(c) + 2*VPAD（内容实测高 + 上下各 VPAD 内边距 → 框紧抱内容，消死白）；
-      整组 2×N 在 [y0,y_end] 内垂直居中，框间距 gap 固定为统一呼吸 → 内部节奏与框间距同频、视觉协调。
+    框高机制：ch = max(card_h(c) for c in cards)（**本页最大内容带 → 四卡等高**，通用铁律 2026-08-03 定稿），card_h = title_band + BAND_GAP + body_block_h + DIV_GAP + CONCL_GAP + concl_h + 2*VPAD（VPAD≈0.10 上下内边距 → 框紧抱内容，消死白）；
+      整组 2×N 在 [y0,y_end] 内垂直居中，框间距 gap 固定为统一呼吸 → 内部节奏与框间距同频、视觉协调；溢出封顶 fit_cap 保证 N 行块必入内容带、不压金句线。
     红线（§4.12-7）：序号须 22pt（非正文 12pt）；结论须居中+加粗+**单行禁换行**（14pt 锁死）；
       正文带 "·" 前缀；整组距金句线 ≥0.10″、卡底 < 金句线 6.50。
-    字号现为布局标准化固定值（覆盖皮肤 card 的 title_size 等），颜色仍取自皮肤。"""
+    标题字号=皮肤 card.title_size（与 two_column 同源统一，2026-08-03 修正原写死 14 致两列/多列标题不统一）；颜色取自皮肤；本页取「最长标题可装下的最小字号(≥14)」全卡统一（与「本页取最大统一」铁律一致、仅过窄卡物理收缩）。"""
     cd = skin['card']
     body_f = skin['fonts']['body']
     head_f = skin['fonts']['head']
     num_color = cd.get('num_color', cd.get('concl_color', cd['title_color']))  # 编号可独立于结论取色（商务风：编号金/结论深蓝）
     ls = skin.get('line_spacing', 1.2)
     # ── 固定舒适小字号 + 大留白（对齐 ChatGPT 参考：小字、颜色拉层级、不顶满）──
-    # 删除原"取最大能装字号"求解器：那会顶满卡片、挤压上下留白（用户反馈"字体太大/紧凑"）。
+    # 卡宽卡高均按内容实测算（用户铁律：取本页最大值统一）；列可用宽作上限、下限=max(70%·列宽,3.0) 防短内容页塌成窄卡+大留白（绝写死 5.71）。
     NUM_SZ = 22          # 序号：全场最大+强调色+粗
-    TS = 14              # 标题 14pt
+    TS = cd.get('title_size', 16)   # 标题字号=皮肤 title_size（与 two_column 同源，统一两列/多列标题，2026-08-03 修正原写死 14）
     BS = 12              # 正文 12pt（SKILL 底线，不可再小）
-    CONCL_SZ = 14        # 结论 14pt（锁死，禁 auto-fit 13——13/14 浮动本身是隐形不一致）
-    BODY_LS = 1.35       # 正文行距固定宽松
-    BULLET_GAP = 0.10    # bullet 段后呼吸
+    CONCL_SZ = 14        # 结论 14pt（锁死，禁 auto-fit 13）
+    BODY_LS = 1.25       # 正文行距（段距 0.22 ≥ 行距 0.208，换行 bullet 不黏连）
+    BULLET_GAP = 0.22    # bullet 段后呼吸（≥ 行距，建立「段>行」层级）
     pad = 0.24           # 卡内左右内边距
-    VPAD = 0.16          # 卡内上下内边距（框紧抱内容，消死白）
+    VPAD = 0.10          # 卡内上下内边距（收紧以适配 2 行块入内容带、不压金句）
     rows = (len(cards) + cols - 1) // cols
-    gap = 0.32           # 框间距（统一呼吸，与内部 VPAD 同频）
-    cw2 = (cw - gap * (cols - 1)) / cols
+    gap = 0.32           # 框间距（统一呼吸）
+    BAND_GAP = 0.08      # 序号/标题行→正文间距
+    DIV_GAP = 0.12       # 正文→分隔线
+    CONCL_GAP = 0.12     # 分隔线→结论
+    NUM_W = 0.52         # 序号占位宽
+    NUM_TITLE_GAP = 0.12 # 序号→标题间距
+    # ── 内容测算：每卡内部宽（最长行：标题/正文/结论）→ 本页 maxW 统一，封顶列宽 ──
+    col_avail = (cw - gap * (cols - 1)) / cols     # 列可用宽：仅作上限（cap），非卡宽
+    inner_w = []
+    for c in cards:
+        title_w = measure_text_width(c['title'], TS)
+        body_w = max([measure_text_width("· " + ln, BS) for ln in c.get('lines', [])], default=0)
+        hl_w = measure_text_width(c['hl'], CONCL_SZ) if c.get('hl') else 0
+        inner_w.append(max(title_w, body_w, hl_w))
+    max_inner = max(inner_w)
+    cw2 = min(max_inner * 1.04 + 2 * pad, col_avail)   # 含 1.04 安全余量→最长行单行不折
+    cw2 = max(cw2, 0.70 * col_avail, 3.0)             # 下限=max(70%·列可用宽, 3.0)：短内容页防塌成窄卡+大留白；3.0 兜底护窄列(2×3)不回退；仍封顶 col_avail，长内容页不动
     iw = cw2 - 2 * pad
-    NUM_W = 0.52         # 序号占位宽（原 0.78 过宽→推远标题+挤窄标题，收窄）
-    NUM_TITLE_GAP = 0.12 # 序号→标题间距（原 0.16）
-    BAND_GAP = 0.10      # 序号/标题行→正文间距
-    DIV_GAP = 0.10       # 正文→分隔线
-    CONCL_GAP = 0.10     # 分隔线→结论
+    lh = BS * BODY_LS / 72.0                           # 单行高（无 +0.04 缓冲，段距恒定）
+    title_band = NUM_SZ * ls / 72.0 + 0.04
+    concl_h = CONCL_SZ * ls / 72.0 + 0.04
 
     def bullet_rows(ln):
         return max(1, math.ceil(measure_text_width("· " + ln, BS) * 1.04 / iw))
 
-    def band_h(c):
-        """内容带真实高度（固定字号下）；框高 = band_h + 2*VPAD → 框紧抱内容，消死白。"""
+    def body_block_h(c):
         bh = 0.0
         for ln in c.get('lines', []):
-            bh += bullet_rows(ln) * BS * BODY_LS / 72.0 + BULLET_GAP
+            bh += bullet_rows(ln) * lh + BULLET_GAP
         if c.get('lines'):
             bh -= BULLET_GAP
-        concl_h = CONCL_SZ * ls / 72.0 + 0.04   # 结论锁 14pt（禁 auto-fit 13）
-        return (NUM_SZ * ls / 72.0 + 0.04) + BAND_GAP + bh + DIV_GAP + 0.01 + CONCL_GAP + concl_h
+        return bh
 
-    # ── 框高 = 内容自适应；整组垂直居中于 [y0,y_end]（框紧抱内容 + 间距同频，视觉协调）──
+    def group_h(c):
+        """正文+分隔线+结论 整组高（标题单独顶锚，本组在剩余高度内垂直居中）。"""
+        return BAND_GAP + body_block_h(c) + DIV_GAP + CONCL_GAP + concl_h
+
+    def card_h(c):
+        return title_band + group_h(c) + 2 * VPAD
+
+    # ── 框高：取全页最大内容 → 四卡等高；封顶确保 N 行块入内容带、不压金句线 ──
+    ch = max(card_h(c) for c in cards)
+    grid_w = cols * cw2 + (cols - 1) * gap
+    sx = x0 + (cw - grid_w) / 2.0                      # 网格块水平居中
     avail = (y_end - y0)
-    ch = band_h(cards[0]) + 2 * VPAD          # 各卡结构相同 → 框高一致
+    fit_cap = (avail - (rows - 1) * gap) / rows
+    if ch > fit_cap:
+        ch = fit_cap                                   # 封顶：2 行块必入 [y0,y_end]，不触红线
     block_h = rows * ch + (rows - 1) * gap
-    sy = y0 + max(0.0, (avail - block_h) / 2.0)
+    sy = y0 + max(0.0, (avail - block_h) / 2.0)        # 整组垂直居中
+    # 本页标题统一字号：取能装下最长标题的最小字号(≥14)，全卡统一（与「本页取最大统一」铁律一致；默认=皮肤16，与两列同源）
+    title_box_w = iw - NUM_W - NUM_TITLE_GAP
+    page_title_sz = TS
+    while page_title_sz > 14 and any(measure_text_width(c['title'], page_title_sz) * 1.04 > title_box_w
+                                     for c in cards):
+        page_title_sz -= 1
     for i, c in enumerate(cards):
         r, cc = divmod(i, cols)
-        x = x0 + cc * (cw2 + gap)
+        x = sx + cc * (cw2 + gap)
         y = sy + r * (ch + gap)
         content_card(slide, x, y, cw2, ch, cd['line'], line_w=cd.get('line_w', 1.25),
                      shadow_alpha=cd.get('shadow_alpha', 8000),
                      shadow_blur=cd.get('shadow_blur', 90000),
                      shadow_dist=cd.get('shadow_dist', 20000))
         ix = x + pad
-        top = y + VPAD                             # 内容自框内上边距起排（紧抱，非居中留死白）
-        band = NUM_SZ * ls / 72.0 + 0.04
+        top = y + VPAD
         # ── 金句硬规则：卡内结论强制单行、禁换行（SKILL §4.12-7）──
         _guard_one_line(c['hl'], CONCL_SZ, iw, ctx=f"卡{c.get('tag','?')}结论")
         # ① 序号 + 标题 同行、MIDDLE 垂直居中
-        tf = tb_box(slide, ix, top, NUM_W, band)
+        tf = tb_box(slide, ix, top, NUM_W, title_band)
         tf.vertical_anchor = MSO_ANCHOR.MIDDLE
         p = run_text(tf, c.get('tag', ''), NUM_SZ, True,
                      num_color, PP_ALIGN.LEFT, Pt(0), True)
         for r2 in p.runs:
             r2.font.name = head_f; set_chinese_font(r2, head_f)
         tf = tb_box(slide, ix + NUM_W + NUM_TITLE_GAP, top,
-                    iw - NUM_W - NUM_TITLE_GAP, band)
+                    title_box_w, title_band)
         tf.vertical_anchor = MSO_ANCHOR.MIDDLE
-        p = run_text(tf, c['title'], TS, True, cd['title_color'], PP_ALIGN.LEFT, Pt(0), True)
+        p = run_text(tf, c['title'], page_title_sz, True, cd['title_color'], PP_ALIGN.LEFT, Pt(0), True)
         for r2 in p.runs:
-            r2.font.name = body_f; set_chinese_font(r2, body_f)
-        # ② 正文 bullet（"· " 前缀 + 宽松行距 + 呼吸段距）
-        yy = top + band + BAND_GAP
+            r2.font.name = head_f; set_chinese_font(r2, head_f)
+        # ② 正文：在 [标题下, 分隔线上沿] 区间内顶部对齐（分隔线/结论锚定卡底 → 同行对齐）
+        gt = top + title_band
+        hl_y = y + ch - VPAD - concl_h        # 结论锚定卡底固定偏移（与 two_column 同源）
+        div_y = hl_y - CONCL_GAP              # 分隔线恒在结论上方固定间距，与卡高/行数解耦
+        yy = gt + BAND_GAP
         for ln in c.get('lines', []):
             nr = bullet_rows(ln)
-            lh = nr * BS * BODY_LS / 72.0
-            tf = tb_box(slide, ix, yy, iw, lh + 0.04)
+            hl_i = nr * lh
+            tf = tb_box(slide, ix, yy, iw, hl_i)        # 框高=行高，无 +0.04 缓冲
             tf.vertical_anchor = MSO_ANCHOR.TOP
             p = run_text(tf, "· " + ln, BS, False, cd['body_color'],
                          PP_ALIGN.LEFT, Pt(0), True)
             for r2 in p.runs:
                 r2.font.name = body_f; set_chinese_font(r2, body_f)
-            yy += lh + BULLET_GAP
-        # ③ 分隔线（跟在正文之后，不写死到卡底）
-        div_y = yy + DIV_GAP
-        card_divider(slide, ix, div_y, iw, cd['line'], pt=0.75, full=True)
-        # ④ 结论（居中 + 加粗 + 锁 14pt，禁 auto-fit 13；受 _guard_one_line 约束禁换行）
-        concl_h = CONCL_SZ * ls / 72.0 + 0.04
-        tf = tb_box(slide, ix, div_y + CONCL_GAP, iw, concl_h)
+            yy += hl_i + BULLET_GAP
+        # ③ 分隔线（锚定卡底：恒在结论上方 CONCL_GAP，同行/同页所有卡对齐）
+        card_divider(slide, ix, div_y, iw, cd.get('div_line', cd['line']), pt=0.75, full=True)
+        # ④ 结论（居中 + 加粗 + 锁 14pt，锚定卡底，受 _guard_one_line 约束）
+        tf = tb_box(slide, ix, hl_y, iw, concl_h)
         tf.vertical_anchor = MSO_ANCHOR.MIDDLE
         p = run_text(tf, c['hl'], CONCL_SZ, True, cd['concl_color'],
                      PP_ALIGN.CENTER, Pt(0), True)
@@ -2125,27 +2161,97 @@ def layout_hero_questions(slide, skin, content, y0=1.88, y_end=6.30,
 
 
 def layout_two_column(slide, skin, content, y0=1.88, y_end=6.30,
-                      x0=CANVAS_X0, cw=CANVAS_CW):
-    """双栏并列公共骨架：两卡（title + items），等体裁等体量。
-    content = {columns[{title, items[]}×2]}。"""
+                      x0=CANVAS_X0, cw=CANVAS_CW,
+                      notes=None, right_flow=False, underline=False):
+    """双栏并列公共骨架（全风格通用）：两卡等宽等高，尺寸由内容实测算、取本页最大值统一。
+
+    content = {columns:[{title, items[]}×2]}
+    - 每栏宽 = 该栏最长行(标题/正文)实测宽 + 2*pad；本页 maxW = 各栏最大值 → 两卡同宽
+    - 每栏高 = 标题区 + 条目×行高 + 结论区(notes) + 内边距；本页 maxH = 各栏最大值 → 两卡等高
+    - 两卡作为一对在内容区水平居中（对称页边，不写死贴边）；整组在 [y0,y_end] 垂直居中
+    - notes: [左结论, 右结论] 可选底部青色结论（与 card_grid 的 hl 同语言）
+    - right_flow: 右栏渲染为时序流（青色阶段词高亮 ① ② ③ ④）
+    - underline: 栏标题下加强调色短下划线（皮肤 accent）
+    落实「卡宽卡高自动测算取最大值统一」通用铁律（禁止写死半幅/写死高度）；
+    下限=70%·列宽（与 card_grid 同口径，2026-08-03 修正原写死 3.2 残留）。"""
     cd = skin['card']
     head_f, body_f = skin['fonts']['head'], skin['fonts']['body']
     ls = skin.get('line_spacing', 1.2)
+    accent = cd.get('accent', cd.get('concl_color', cd['title_color']))
+    div_color = cd.get('div_line', cd['line'])
     def lh(sz): return sz * ls / 72.0
-    cw2 = (cw - 0.67) / 2.0
-    ch = y_end - y0
-    for i, col in enumerate(content['columns']):
-        x = x0 + i * (cw2 + 0.67)
-        content_card(slide, x, y0, cw2, ch, cd['line'], line_w=cd.get('line_w', 1.25))
-        _skin_text(slide, x + 0.35, y0 + 0.30, cw2 - 0.70, 0.40, col['title'],
-                   cd['title_size'], True, cd['title_color'], head_f)
-        yy = y0 + 0.95
-        for it in col['items']:
-            h = max(1, math.ceil(measure_text_width("·  " + it, cd['body_size']) * 1.03 / (cw2 - 0.70))) \
-                * lh(cd['body_size'])
-            _skin_text(slide, x + 0.35, yy, cw2 - 0.70, h + 0.04, "·  " + it,
-                       cd['body_size'], False, cd['body_color'], body_f)
-            yy += h + 0.16
+    TS = cd.get('title_size', 16)
+    BS = cd.get('body_size', 12)
+    NOTESZ = cd.get('note_size', 14)
+    pad = 0.30
+    gap = 0.32
+    cols = content['columns']
+    # ── 逐栏测算内容尺寸 ──
+    inner_w, col_h = [], []
+    for i, col in enumerate(cols):
+        title_w = measure_text_width(col['title'], TS)
+        items = col.get('items', [])
+        body_w = max([measure_text_width("·  " + it, BS) for it in items], default=0)
+        inner_w.append(max(title_w, body_w))
+        header_h = lh(TS) + 0.12
+        rows_h = len(items) * (lh(BS) + 0.12)
+        if rows_h:
+            rows_h -= 0.12
+        note_h = (lh(NOTESZ) + 0.22) if (notes and i < len(notes) and notes[i]) else 0.0
+        col_h.append(header_h + (0.10 if underline else 0.0) + rows_h + note_h + 2 * pad)
+    max_inner = max(inner_w)
+    max_h = max(col_h)
+    # ── 布局约束：列可用宽封顶 + 70% 下限（与 card_grid 同口径，防飘卡/大留白）──
+    col_avail = (cw - gap) / 2.0
+    cw2 = min(max_inner + 2 * pad, col_avail)
+    cw2 = max(cw2, 0.70 * col_avail)                  # 下限=70%·列可用宽（两列页 col_avail 固定，无 3 列冲突）
+    max_h = min(max_h, y_end - y0)
+    # ── 一对在内容区水平居中 ──
+    grid_w = 2 * cw2 + gap
+    sx = x0 + (cw - grid_w) / 2.0
+    sy = y0 + (y_end - y0 - max_h) / 2.0
+    for i, col in enumerate(cols):
+        cx = sx + i * (cw2 + gap)
+        content_card(slide, cx, sy, cw2, max_h, cd['line'], line_w=cd.get('line_w', 1.25),
+                     shadow_alpha=cd.get('shadow_alpha', 8000),
+                     shadow_blur=cd.get('shadow_blur', 90000),
+                     shadow_dist=cd.get('shadow_dist', 20000))
+        # 栏标题 居中
+        _skin_text(slide, cx + pad, sy + 0.18, cw2 - 2 * pad, 0.42, col['title'],
+                   TS, True, cd['title_color'], head_f, PP_ALIGN.CENTER)
+        if underline:
+            rect(slide, cx + (cw2 - 1.2) / 2, sy + 0.62, 1.2, 0.03, fill=accent)
+        # 正文在 (标题区, 结论区) 之间垂直居中
+        items = col.get('items', [])
+        area_top = sy + (0.80 if underline else 0.70)
+        note = notes[i] if (notes and i < len(notes)) else None
+        area_bot = sy + max_h - (0.60 if note else 0.16)
+        blk = len(items) * (lh(BS) + 0.12)
+        if blk > (area_bot - area_top):
+            blk = area_bot - area_top
+        by = (area_top + area_bot) / 2 - blk / 2
+        for j, it in enumerate(items):
+            iy = by + j * (lh(BS) + 0.12)
+            tf = tb_box(slide, cx + pad, iy, cw2 - 2 * pad, lh(BS) + 0.04)
+            tf.vertical_anchor = MSO_ANCHOR.MIDDLE
+            if right_flow and i == 1:
+                phase = it.split("：")[0].split(":")[0].strip()
+                emph_runs(tf, it, BS, cd['body_color'], kw_t=(phase,), color_t=accent, font=body_f)
+            else:
+                p = run_text(tf, "·  " + it, BS, False, cd['body_color'],
+                             PP_ALIGN.LEFT, Pt(0), True)
+                for r2 in p.runs:
+                    r2.font.name = body_f; set_chinese_font(r2, body_f)
+        # 底部结论 note + 暗色分隔线（锚定卡底固定偏移）
+        if note:
+            note_top = sy + max_h - 0.16 - 0.28
+            div_y = note_top - 0.10
+            rect(slide, cx + pad, div_y, cw2 - 2 * pad, 0.012, fill=div_color)
+            tf = tb_box(slide, cx + pad, note_top, cw2 - 2 * pad, 0.28)
+            tf.vertical_anchor = MSO_ANCHOR.MIDDLE
+            p = run_text(tf, note, NOTESZ, True, accent, PP_ALIGN.CENTER, Pt(0), True)
+            for r2 in p.runs:
+                r2.font.name = body_f; set_chinese_font(r2, body_f)
     return y_end
 
 

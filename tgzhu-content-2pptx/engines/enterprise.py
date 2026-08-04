@@ -20,8 +20,9 @@ from common import (BIZ_TEAL, WHITE, LIGHT_GRAY, GOLD, ORANGE,
                     TYPOGRAPHY, apply_role, measure_text_width, find_cjk_font,
                     loop_arrow, LOOP_ARROW_W, loop_return_u, fit_single_line, fit_font_to_width,
                     cover_line, fit_cover_title, shape_bottom_in, rounded_card, emph_runs, add_soft_shadow,
-                    bottom_gold as _gold, layout_loop_page, layout_card_grid, layout_compare,
-                    layout_value_grid, layout_profile_warning, layout_transition_rows)
+                    bottom_gold as _gold, layout_loop_page, layout_card_grid, layout_two_column,
+                    layout_compare, layout_value_grid, layout_profile_warning,
+                    layout_transition_rows, content_card)
 
 # ═══════════════════════════════════════════
 # 原版 biz_engine 常量（全量搬运）
@@ -42,7 +43,10 @@ ENTERPRISE_SKIN = {
     "node": {"size": 16, "bold": True, "color": WHITE, "sub_size": 12, "sub_color": LIGHT_GRAY},
     "card": {"title_size": 16, "title_color": WHITE, "sub_size": 12, "sub_color": LIGHT_GRAY,
              "body_size": 12, "body_color": LIGHT_GRAY, "concl_color": BIZ_ACCENT,
-             "line": ENTER_CARD_LINE, "line_w": 1.25},
+             "accent": BIZ_TEAL,
+             "line": ENTER_CARD_LINE, "line_w": 1.25,
+             # 卡内分隔线专用暗色：退背景层（规范 §视觉层级），不与卡边框(浅灰)混淆
+             "div_line": RGBColor(0x44, 0x58, 0x6C)},
     "arrow": {"color": WHITE, "w": Pt(2)},       # 深底 → 白 2pt
     "timeline": {"axis": BIZ_TEAL, "dot": BIZ_TEAL, "date_size": 14, "date_color": BIZ_ACCENT,
                  "event_size": 14, "event_color": LIGHT_GRAY, "arrow": True},
@@ -360,16 +364,12 @@ def _render_gold(slide, text):
 # ═══════════════════════════════════════════
 # two_column（原版 two_column line 242-263 直译）
 # ═══════════════════════════════════════════
-def two_column(slide, title=None, left=None, right=None, n=None, total=None, h=4.5, label=None, sub=None):
-    """双栏（用户规格）：
-    - 无边框圆角框 ROUNDED_RECTANGLE + 深蓝填充
-    - 标题 16pt Bold 白 居中（居顶）
-    - 正文 12pt 浅灰，与标题拉开间距，不带引导竖线
-
-    ⚠️ 未经 FDE 迭代打磨（旧版原语）：对齐 0.8→12.93 与富原语内容区 0.6→12.73 不一致、
-    默认大圆角、无 label/层级。新 deck 中「人/角色罗列 vs 观点/告诫」的双卡页
-    应改用 profile_warning；两侧等体裁等体量的简单并列才用本原语，且用前对照
-    「富原语统一骨架约定」核一遍视觉语言。"""
+def two_column(slide, title=None, left=None, right=None, n=None, total=None,
+               label=None, sub=None, left_note=None, right_note=None, right_flow=False):
+    """双栏（企业风，委托通用 layout_two_column）：
+    - 卡片与 card_grid 同款（content_card）；栏标题 16pt 白粗 + 青色短下划线
+    - 卡宽卡高由内容测算取本页最大值统一（通用铁律）；两卡对称居中
+    - 底部青色结论 note；right_flow=True 时右栏渲染为时序流（青色阶段词高亮）"""
     if title:
         _action_title(slide, title)
         if label:
@@ -380,31 +380,9 @@ def two_column(slide, title=None, left=None, right=None, n=None, total=None, h=4
             _add_text(slide, Inches(0.46), Inches(1.35), Inches(11.73), Inches(0.35),
                       sub, font_size=SMALL_SIZE, font_color=LIGHT_GRAY,
                       font_name='微软雅黑')
-    cw = Inches(5.73)
-    cy = Inches(1.7)
-    cx1 = Inches(0.8)
-    cx2 = Inches(0.8) + cw + Inches(0.67)
-    for (cx, col) in ((cx1, left), (cx2, right)):
-        # 无边框圆角框
-        card = slide.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE,
-            cx, cy, cw, Inches(h))
-        card.fill.solid()
-        card.fill.fore_color.rgb = BIZ_CARD_BG
-        card.line.fill.background()
-        sp = card._element
-        style = sp.find(qn('p:style'))
-        if style is not None: sp.remove(style)
-        # 标题 16pt Bold 白 居中（居顶）
-        _add_text(slide, cx + Inches(0.3), cy + Inches(0.2),
-                  cw - Inches(0.4), Inches(0.5),
-                  col["title"], font_size=Pt(TYPOGRAPHY["title_card"][0]), font_color=WHITE, bold=True,
-                  alignment=PP_ALIGN.CENTER, font_name='微软雅黑')
-        # 正文 12pt，与标题拉开到 y+0.85
-        for i, item in enumerate(col.get("items", [])):
-            _add_text(slide, cx + Inches(0.3), cy + Inches(0.85) + Inches(0.5) * i,
-                      cw - Inches(0.4), Inches(0.5),
-                      f"·  {item}", font_size=Pt(TYPOGRAPHY["body_small"][0]), font_color=LIGHT_GRAY,
-                      font_name='微软雅黑')
+    layout_two_column(slide, ENTERPRISE_SKIN, {"columns": [left, right]},
+                      y0=1.62, y_end=6.45,
+                      notes=[left_note, right_note], right_flow=right_flow, underline=True)
     if n and total:
         add_page_number(slide, n, total, ENT_MUTE)
 
