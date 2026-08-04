@@ -253,6 +253,7 @@ PPT 页面上的文字必须严格等于用户提供的原文范围，不得自�
 | 垂直时间轴 | `timeline` / （文质 `timeline_page`）/ `layout_timeline` | §4.3.1 |
 | 双栏 | `two_column` / （文质 `definition_compare`）/ `layout_two_column` | §4.3.2 |
 | 多栏卡片网格 | `card_grid` / — / `layout_card_grid` | §4.3.3 |
+| 单排三列 | `three_column` / — / `layout_three_column` | §4.3.3 |
 | 2×2 闭环（四象限） | `value_loop`（企业）/ `value_grid`（文质）/ `layout_value_grid` | §4.3.4 |
 | 定义对比 | `definition_compare` / — / `layout_compare` | §4.3.5 |
 | 表格 | （通用） / — / — | §4.3.6 |
@@ -344,7 +345,7 @@ PPT 页面上的文字必须严格等于用户提供的原文范围，不得自�
 - 布局几何只写一份在 `common.layout_*`（骨架）；四风格只提供皮肤（`SKIN_*` dict：配色/字体/字号/箭头/卡样式），**骨架不引用任何具体色值/字体，皮肤不写布局坐标**。
 - **企业风是布局样板**：新场景先在企业风调通布局 → 公共骨架定稿 → 文质/锋芒/商务用各自皮肤自动生效（生成时换 skin 重跑即可，杜绝"企业风迭代了、其它风格还是旧的"）。
 - 皮肤契约字段：`bg / fonts{head,body,mute} / cap{size,bold,color} / node{size,bold,color,sub_size,sub_color} / card{title_size,title_color,sub_size,sub_color,body_size,body_color,concl_color,line,line_w} / arrow{color,w} / tail_bar / line_spacing / timeline / compare / value_grid / profile / transition / hero`（各原语专属字段见骨架 docstring）。
-- 已骨架化（12 个）：`layout_loop_page` / `layout_timeline` / `layout_card_grid` / `layout_compare` / `layout_value_grid` / `layout_profile_warning` / `layout_six_step` / `layout_talent_strip` / `layout_transition_rows` / `layout_hero_questions` / `layout_two_column` / `layout_summary`。
+- 已骨架化（13 个）：`layout_loop_page` / `layout_timeline` / `layout_card_grid` / `layout_three_column` / `layout_compare` / `layout_value_grid` / `layout_profile_warning` / `layout_six_step` / `layout_talent_strip` / `layout_transition_rows` / `layout_hero_questions` / `layout_two_column` / `layout_summary`。
 - **引擎层已全部改调骨架**：文质风 12 个原语、企业风 6 个富原语、锋芒/商务基础原语——原函数签名全部保留，业务脚本零改动；`enterprise.timeline` 卡片式（homePlate+徽章+虚线）为定稿特色保留在引擎层。新增场景一律走"企业风调通 → 骨架定稿 → 三风格换皮肤生效"。验证：`四风格骨架试点v4.pptx`（12 骨架 × 4 皮肤 = 48 页）validate PASS + 文质业务回归 PASS。
 
 > 实战锚点：企业风 `value_loop`（2×2 闭环页，见 `specs/enterprise-constraints.md`）即 §4.3.4 / §4.4 的落地样板——等边箭头、卡宽内容实测、框内五区规则齐备。封面允许刻意留白营造呼吸感，本节约衡要求不约束封面。
@@ -353,7 +354,7 @@ PPT 页面上的文字必须严格等于用户提供的原文范围，不得自�
 
 > **⚠️ 调用约定铁律（实战踩坑）**：版式原语分两类——
 > - **整页型**（内部已自带 `section_header` + 底部金句 + 封面二维码）：`cover`，以及企业风专属富版式 `definition_compare`、`value_loop`、`work_people`、`transform_summary`、`profile_warning`（**这 5 个富版式均为企业风专属，锋芒/文质/商务均不存在**）。直接调即可，无需再调 section_header。锋芒/文质/商务的整页封面用 `cover`，其余页用 `section_header` + 组件型原语组合。
-> - **组件型**（纯版面、**不自带标题/副标题/金句**）：`timeline`、`two_column`、`card_grid`。
+> - **组件型**（纯版面、**不自带标题/副标题/金句**）：`timeline`、`two_column`、`card_grid`。此外 `three_column`（单排三卡、与 2×2 同源）**四风格均已支持**（企业风早有；锋芒/文质/商务于 2026-08-04 补齐 wrapper），其**内部自带 `section_header`**（传 `title`/`label` 即出页眉，无需调用方再调），与 2×2 一致（无下划线/无 icon/无列间连接线）；不传 `title` 时仅补页码。
 >   调用方必须**先 `section_header(s, h1, label, sub)` 再调组件型原语**，否则该页会缺标题/副标题；金句通过 `gold=` 参数由原语内部渲染（见 §4.2.2），不传则不画。
 > 校验脚本必须覆盖**所有页面**（含中间页），只校验最后一页会漏检中间页的缺失类 bug。
 >

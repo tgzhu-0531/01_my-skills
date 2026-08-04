@@ -21,6 +21,7 @@ from common import (BIZ_TEAL, WHITE, LIGHT_GRAY, GOLD, ORANGE,
                     loop_arrow, LOOP_ARROW_W, loop_return_u, fit_single_line, fit_font_to_width,
                     cover_line, fit_cover_title, shape_bottom_in, rounded_card, emph_runs, add_soft_shadow,
                     bottom_gold as _gold, layout_loop_page, layout_card_grid, layout_two_column,
+                    layout_three_column,
                     layout_compare, layout_value_grid, layout_profile_warning,
                     layout_transition_rows, content_card)
 
@@ -45,6 +46,8 @@ ENTERPRISE_SKIN = {
              "body_size": 12, "body_color": LIGHT_GRAY, "concl_color": BIZ_ACCENT,
              "accent": BIZ_TEAL,
              "line": ENTER_CARD_LINE, "line_w": 1.25,
+             # 双栏卡边框：近背景暗蓝，比原#D2D8DC浅灰更退背景层、不抢戏（仅 enterprise 双栏页生效）
+             "two_col_border": RGBColor(0x22, 0x40, 0x5F),
              # 卡内分隔线专用暗色：退背景层（规范 §视觉层级），不与卡边框(浅灰)混淆
              "div_line": RGBColor(0x44, 0x58, 0x6C)},
     "arrow": {"color": WHITE, "w": Pt(2)},       # 深底 → 白 2pt
@@ -176,9 +179,9 @@ def _add_rect(slide, x, y, w, h, fill_color):
     return shape
 
 def _action_title(slide, text):
-    """内容页标题（突出重点）：20pt Bold 白，x=0.46 y=0.25 w=8.6。"""
+    """内容页标题（突出重点）：28pt Bold 白，x=0.46 y=0.25 w=8.6。与 section_header 的 H1(TYPOGRAPHY['h1']=28pt) 一致。"""
     _add_text(slide, Inches(0.46), Inches(0.25), Inches(8.6), Inches(0.65), text,
-              font_size=Pt(20), font_color=WHITE, bold=True,
+              font_size=Pt(28), font_color=WHITE, bold=True,
               font_name='微软雅黑', anchor=MSO_ANCHOR.BOTTOM)
 
 # ═══════════════════════════════════════════
@@ -367,24 +370,21 @@ def _render_gold(slide, text):
 def two_column(slide, title=None, left=None, right=None, n=None, total=None,
                label=None, sub=None, left_note=None, right_note=None, right_flow=False):
     """双栏（企业风，委托通用 layout_two_column）：
+    - 标题+副标题统一委托 section_header 渲染，保证与全站 H1(28白)/label(18青@y=1.10)
+      字号与间距一致（参照 Skill 首页标题区规范），消除双栏页副标题 14pt/间距过紧的漂移
     - 卡片与 card_grid 同款（content_card）；栏标题 16pt 白粗 + 青色短下划线
     - 卡宽卡高由内容测算取本页最大值统一（通用铁律）；两卡对称居中
     - 底部青色结论 note；right_flow=True 时右栏渲染为时序流（青色阶段词高亮）"""
     if title:
-        _action_title(slide, title)
-        if label:
-            _add_text(slide, Inches(0.46), Inches(0.95), Inches(8.6), Inches(0.4),
-                      label, font_size=Pt(14), font_color=BIZ_TEAL, bold=True,
-                      font_name='微软雅黑')
-        if sub:
-            _add_text(slide, Inches(0.46), Inches(1.35), Inches(11.73), Inches(0.35),
-                      sub, font_size=SMALL_SIZE, font_color=LIGHT_GRAY,
-                      font_name='微软雅黑')
+        # 标题区交给 section_header：H1(28白) + label(18青@y=1.10)，与全站一致；sub 同行内联（同 section_header 约定）
+        section_header(slide, title, label, sub=sub, n=n, total=total)
+    else:
+        if n and total:
+            add_page_number(slide, n, total, ENT_MUTE)
     layout_two_column(slide, ENTERPRISE_SKIN, {"columns": [left, right]},
                       y0=1.62, y_end=6.45,
                       notes=[left_note, right_note], right_flow=right_flow, underline=True)
-    if n and total:
-        add_page_number(slide, n, total, ENT_MUTE)
+    # 页码已由 section_header 处理（title 存在时），避免重复落页码
 
 # ═══════════════════════════════════════════
 # card_grid — 沿用原版两栏布局风格
@@ -395,6 +395,15 @@ def card_grid(slide, cards, cols=2, n=None, total=None):
     layout_card_grid(slide, ENTERPRISE_SKIN, cards, cols=cols, y0=1.60, y_end=6.38)
     if n and total:
         add_page_number(slide, n, total, ENT_MUTE)
+def three_column(slide, title=None, label=None, cards=None, n=None, total=None, connect=False):
+    """三列（企业风，委托通用 layout_three_column）：单排三卡、等宽等框高，与 2×2 一致（无下划线/无 icon/无连接线）。
+    标题区复用 section_header（28pt H1 + 18pt label，与全站一致）；n/total 由 section_header 绘制页码。"""
+    if title:
+        section_header(slide, title, label, n=n, total=total)
+    else:
+        if n and total:
+            add_page_number(slide, n, total, ENT_MUTE)
+    layout_three_column(slide, ENTERPRISE_SKIN, cards, y0=1.65, y_end=6.45, connect=connect)
 def value_loop(slide, h1, label, items, gold, n=None, total=None):
     """四大价值/闭环页：公共骨架 layout_value_grid（loop=True：四段等长循环箭头、四卡等距 0.7）。
     items 顺序固定：左上(01) → 右上(02) → 右下(03) → 左下(04)（顺时针）。"""

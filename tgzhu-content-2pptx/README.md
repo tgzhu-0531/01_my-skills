@@ -136,5 +136,6 @@ pip install python-pptx lxml
 - `styles/fengmang.html` / `styles/wenzhi.html` — 锋芒风 / 文质风设计稿
 - `engines/common.py` — 四风格共享基件（颜色 / 间距 / 文本工具 / 二维码 / 页码）
 - `engines/{enterprise,fengmang,wenzhi,business}.py` — 四风格生成引擎（统一版式原语）
+- `references/runner-example-enterprise.py` / `references/runner-example-fengmang.py` / `references/runner-example-wenzhi.py` — **per-article runner 范式参考样例**（企业风 / 锋芒风 / 文质风，内容一致；展示如何把内容映射到版式原语、各引擎 API 差异如何适配；文质风示范 `(prs, ...)` 整本构建范式：common.blank_deck 建画布 → 富原语/低级原语 → prs.save）
 - `templates/enterprise.pptx` — 企业风克隆模板（商务风不依赖模板）
 - `assets/qrcode.jpg` — 二维码

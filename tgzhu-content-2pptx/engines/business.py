@@ -26,7 +26,7 @@ from common import (BIZ_TEAL, BIZ_TEAL2, BIZ_DARK, WHITE, GOLD, LIGHT_GRAY,
                     tb_box, run_text, rect, add_page_number, shape_bottom_in,
                     set_chinese_font, blank_deck, set_bg, FONT,
                     cover_qr, bottom_gold as _gold, cover_line, fit_cover_title,
-                    layout_timeline, layout_card_grid, layout_two_column, layout_summary,
+                    layout_timeline, layout_card_grid, layout_three_column, layout_two_column, layout_summary,
                     layout_compare, layout_loop_page, layout_profile_warning,
                     layout_transition_rows)
 
@@ -87,9 +87,10 @@ def section_header(slide, h1, label, sub, n=None, total=None):
     tf = tb_box(slide, 0.46, 0.95, 12.0, 0.45)
     tf.vertical_anchor = MSO_ANCHOR.MIDDLE
     p = run_text(tf, label, 14, True, BIZ_TEAL_N, PP_ALIGN.LEFT, Pt(0), first=True)
-    r = p.add_run(); r.text = "  " + sub
-    r.font.size = Pt(14); r.font.bold = False; r.font.name = FONT
-    r.font.color.rgb = BIZ_AUX; set_chinese_font(r)
+    if sub:
+        r = p.add_run(); r.text = "  " + sub
+        r.font.size = Pt(14); r.font.bold = False; r.font.name = FONT
+        r.font.color.rgb = BIZ_AUX; set_chinese_font(r)
     if n and total:
         add_page_number(slide, n, total, BIZ_AUX)
 
@@ -118,6 +119,15 @@ def card_grid(slide, cards, cols=2, n=None, total=None):
     layout_card_grid(slide, BUSINESS_SKIN, cards, cols=cols, y0=1.50, y_end=6.38)
     if n and total:
         add_page_number(slide, n, total, MED_GRAY)
+def three_column(slide, title=None, label=None, cards=None, n=None, total=None, connect=False):
+    """三列（商务风，委托通用 layout_three_column）：单排三卡、等宽等框高，与 2×2 一致（无下划线/无 icon/无连接线）。
+    标题区复用 section_header（与全站一致）；n/total 由 section_header 绘制页码。商务风 card_grid 不自带背景，调用方须先 set_bg(WHITE)。"""
+    if title:
+        section_header(slide, title, label, None, n=n, total=total)
+    else:
+        if n and total:
+            add_page_number(slide, n, total, MED_GRAY)
+    layout_three_column(slide, BUSINESS_SKIN, cards, y0=1.65, y_end=6.45, connect=connect)
 def summary(slide, title, sub, metrics=None, quote=None, n=None, total=None):
     """总结页：公共骨架 layout_summary（居中大标题+指标+金色收尾金句）。"""
     layout_summary(slide, BUSINESS_SKIN, {"title": title, "sub": sub,

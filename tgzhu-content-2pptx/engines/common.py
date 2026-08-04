@@ -469,12 +469,16 @@ COVER_QR = {
     "business":   (6.12, 5.55, 1.0),
 }
 
-def cover_qr(slide, style, label="扫码关注「天戈朱」"):
-    """封面底中二维码 + 提示标签（SKILL §4.9）。style 取 COVER_QR 表坐标；无匹配则跳过。"""
+def cover_qr(slide, style, label="扫码关注「天戈朱」", qr_path=None):
+    """封面底中二维码 + 提示标签（SKILL §4.9）。style 取 COVER_QR 表坐标；无匹配则跳过。
+    qr_path=False 时不画二维码也不画扫码署名（调用方自行在底部显示 author 等）；
+    否则 qr_path 透传给 add_qr（None=用 skill 默认资产码）。"""
     if style not in COVER_QR:
         return
+    if qr_path is False:
+        return
     x, y, size = COVER_QR[style]
-    add_qr(slide, x, y, size)
+    add_qr(slide, x, y, size, path=qr_path)
     tf = tb_box(slide, x - 0.3, y + size + 0.05, size + 0.6, 0.3)
     run_text(tf, label, 9, False, LIGHT_GRAY, PP_ALIGN.CENTER, Pt(0), first=True)
 
@@ -693,8 +697,13 @@ def validate_deck(path, qr_on_cover=True, bg_colors=None, verbose=True):
     if qr_on_cover and p.slides:
         pics = [sh for sh in p.slides[0].shapes if sh.shape_type == MSO_SHAPE_TYPE.PICTURE]
         if not pics:
-            ok = False
-            rep.append("  [封面] 无二维码图片")
+            # 封面显式无码(qr_path=False)但带作者/来源署名时，视为有意设计，降级为告警而非失败
+            cover_txt = " ".join(sh.text_frame.text for sh in p.slides[0].shapes if sh.has_text_frame)
+            if any(k in cover_txt for k in ("公众号", "来源：", "作者：", "作者 ")):
+                rep.append("  [封面] 无二维码图片（但有作者/来源署名，已豁免硬性要求）")
+            else:
+                ok = False
+                rep.append("  [封面] 无二维码图片")
     # 3)+4) 箭头
     for i, s in enumerate(p.slides, 1):
         for sh in s.shapes:
@@ -796,6 +805,8 @@ def validate_deck(path, qr_on_cover=True, bg_colors=None, verbose=True):
     # 8) label 分类词模式软告警（企业风 label 应为核心观点，勿用「中文·English」分类）
     #    仅当「·」前存在非空中文分类词时判定为分类词，避免误伤「· English 中文」型要点 bullets。
     for i, s in enumerate(p.slides, 1):
+        if i == 1:  # 封面 tags 本就是主题词，跳过分类词检查
+            continue
         for sh in s.shapes:
             if not sh.has_text_frame:
                 continue
@@ -1386,7 +1397,7 @@ def layout_card_grid(slide, skin, cards, cols=2, y0=1.88, y_end=6.45,
     VPAD = 0.10          # 卡内上下内边距（收紧以适配 2 行块入内容带、不压金句）
     rows = (len(cards) + cols - 1) // cols
     gap = 0.32           # 框间距（统一呼吸）
-    BAND_GAP = 0.08      # 序号/标题行→正文间距
+    BAND_GAP = 0.28      # 序号/标题行→正文间距（> BULLET_GAP 0.22，立「标题↔正文 > 段间」层级，对齐 SKILL §4.12-7；与三列统一）
     DIV_GAP = 0.12       # 正文→分隔线
     CONCL_GAP = 0.12     # 分隔线→结论
     NUM_W = 0.52         # 序号占位宽
@@ -1401,7 +1412,7 @@ def layout_card_grid(slide, skin, cards, cols=2, y0=1.88, y_end=6.45,
         inner_w.append(max(title_w, body_w, hl_w))
     max_inner = max(inner_w)
     cw2 = min(max_inner * 1.04 + 2 * pad, col_avail)   # 含 1.04 安全余量→最长行单行不折
-    cw2 = max(cw2, 0.70 * col_avail, 3.0)             # 下限=max(70%·列可用宽, 3.0)：短内容页防塌成窄卡+大留白；3.0 兜底护窄列(2×3)不回退；仍封顶 col_avail，长内容页不动
+    cw2 = max(cw2, 0.80 * PAGE_W / cols - gap * (cols - 1) / cols, 3.0)  # 下限=页宽80%对(与双栏 pair_min 同口径)：短内容页防塌成窄卡+大留白；3.0 兜底护窄列(2×3)不回退；仍封顶 col_avail，长内容页不动
     iw = cw2 - 2 * pad
     lh = BS * BODY_LS / 72.0                           # 单行高（无 +0.04 缓冲，段距恒定）
     title_band = NUM_SZ * ls / 72.0 + 0.04
@@ -1445,7 +1456,7 @@ def layout_card_grid(slide, skin, cards, cols=2, y0=1.88, y_end=6.45,
         r, cc = divmod(i, cols)
         x = sx + cc * (cw2 + gap)
         y = sy + r * (ch + gap)
-        content_card(slide, x, y, cw2, ch, cd['line'], line_w=cd.get('line_w', 1.25),
+        content_card(slide, x, y, cw2, ch, cd.get('two_col_border', cd['line']), line_w=cd.get('line_w', 1.25),
                      shadow_alpha=cd.get('shadow_alpha', 8000),
                      shadow_blur=cd.get('shadow_blur', 90000),
                      shadow_dist=cd.get('shadow_dist', 20000))
@@ -1490,6 +1501,141 @@ def layout_card_grid(slide, skin, cards, cols=2, y0=1.88, y_end=6.45,
                      PP_ALIGN.CENTER, Pt(0), True)
         for r2 in p.runs:
             r2.font.name = body_f; set_chinese_font(r2, body_f)
+    return y_end
+
+
+def layout_three_column(slide, skin, cards, y0=1.65, y_end=6.45,
+                        x0=CANVAS_X0, cw=CANVAS_CW, connect=False):
+    """三列专用骨架（2026-08-04 增，独立于 card_grid 的 2×N 网格）：单排三卡、等宽、等框高。
+
+    三列几何调整（专家，区别于双栏 80%）：卡宽锁定 ≈ 页宽 92%（12.27″），gap 0.35″，
+    单卡 ≈3.86″。理由：三列比二列更窄，若沿用 80% 单卡内文宽仅 ~2.84″，12pt 中文必折行；
+    92% 时内文宽 ~3.38″，可读性明显更好，仍留 4% 边距透气。其余原则与双栏/2×2 同源：
+    等框高（本页最大内容）、内容自动分段铺满、暗色框线 #22405F、分隔线锚定卡底同行对齐。
+
+    卡内结构（与 card_grid 五区完全对齐，已去除三列专属装饰以统一 2×2）：
+      ① 序号 tag(22pt 青粗) + 标题 title(16pt 白粗) 同行 MIDDLE；
+      ② 正文 lines(12pt 灰、· 前缀、自动折行，标题下 → 分隔线上区间内排布)；
+      ③ 分隔线（暗色，锚定卡底固定偏移 div_y=hl_y-CONCL_GAP，与本卡 bullet 行数解耦 → 同行三卡对齐）；
+      ④ 结论 hl(14pt 青粗、单行禁换行，与 2×2 一致、无 icon)。
+    框线：cd.get('two_col_border', cd['line'])（#22405F 退背景层，与双栏/2×2 统一）。
+    列间连接线默认关闭（connect=False）：与 2×2 同，卡片之间不画线；如需递进语义可传 connect=True。
+    红线（§4.12-7）：序号 22pt、结论 14pt 居中加粗单行禁换行、正文 · 前缀、卡底 < 6.50。"""
+    cd = skin['card']
+    body_f = skin['fonts']['body']
+    head_f = skin['fonts']['head']
+    num_color = cd.get('num_color', cd.get('concl_color', cd['title_color']))
+    ls = skin.get('line_spacing', 1.2)
+
+    NUM_SZ = 22
+    TS = cd.get('title_size', 16)
+    BS = 12
+    CONCL_SZ = 14
+    BODY_LS = 1.25
+    BULLET_GAP = 0.22
+    pad = 0.24
+    VPAD = 0.10
+    gap = 0.35
+    BAND_GAP = 0.28           # 标题行 → 正文（> BULLET_GAP 0.22，立「标题↔正文 > 段间」层级，对齐 SKILL §4.12-7）
+    DIV_GAP = 0.12
+    CONCL_GAP = 0.12
+    NUM_W = 0.52
+    NUM_TITLE_GAP = 0.12
+
+    # 三列等宽：锁定页宽 92%（固定，内容内折行；不随内容收缩，避免三列塌成窄卡）
+    grid_w = 0.92 * PAGE_W
+    cw2 = (grid_w - 2 * gap) / 3.0
+    iw = cw2 - 2 * pad
+    sx = (PAGE_W - grid_w) / 2.0            # 三卡整体水平居中
+
+    lh = BS * BODY_LS / 72.0
+    title_band = NUM_SZ * ls / 72.0 + 0.04
+    concl_h = CONCL_SZ * ls / 72.0 + 0.04
+
+    def bullet_rows(ln):
+        return max(1, math.ceil(measure_text_width("· " + ln, BS) * 1.04 / iw))
+
+    def body_block_h(c):
+        bh = 0.0
+        for ln in c.get('lines', []):
+            bh += bullet_rows(ln) * lh + BULLET_GAP
+        if c.get('lines'):
+            bh -= BULLET_GAP
+        return bh
+
+    def group_h(c):
+        return BAND_GAP + body_block_h(c) + DIV_GAP + CONCL_GAP + concl_h
+
+    def card_h(c):
+        return title_band + group_h(c) + 2 * VPAD   # 与 card_grid 对齐：group_h 已含首行 BAND_GAP，勿重复 +BAND_GAP
+
+    ch = max(card_h(c) for c in cards)
+    avail = (y_end - y0)
+    fit_cap = avail
+    if ch > fit_cap:
+        ch = fit_cap
+    sy = y0 + max(0.0, (avail - ch) / 2.0)
+
+    # 本页标题统一字号：能装下最长标题的最小字号(≥14)
+    title_box_w = iw - NUM_W - NUM_TITLE_GAP
+    page_title_sz = TS
+    while page_title_sz > 14 and any(measure_text_width(c['title'], page_title_sz) * 1.04 > title_box_w
+                                     for c in cards):
+        page_title_sz -= 1
+
+    for i, c in enumerate(cards):
+        x = sx + i * (cw2 + gap)
+        y = sy
+        content_card(slide, x, y, cw2, ch, cd.get('two_col_border', cd['line']),
+                     line_w=cd.get('line_w', 1.25),
+                     shadow_alpha=cd.get('shadow_alpha', 8000),
+                     shadow_blur=cd.get('shadow_blur', 90000),
+                     shadow_dist=cd.get('shadow_dist', 20000))
+        ix = x + pad
+        top = y + VPAD
+        _guard_one_line(c['hl'], CONCL_SZ, iw, ctx=f"卡{c.get('tag','?')}结论")
+        # ① tag + title 同行 MIDDLE
+        tf = tb_box(slide, ix, top, NUM_W, title_band)
+        tf.vertical_anchor = MSO_ANCHOR.MIDDLE
+        p = run_text(tf, c.get('tag', ''), NUM_SZ, True, num_color, PP_ALIGN.LEFT, Pt(0), True)
+        for r2 in p.runs:
+            r2.font.name = head_f; set_chinese_font(r2, head_f)
+        tf = tb_box(slide, ix + NUM_W + NUM_TITLE_GAP, top, title_box_w, title_band)
+        tf.vertical_anchor = MSO_ANCHOR.MIDDLE
+        p = run_text(tf, c['title'], page_title_sz, True, cd['title_color'], PP_ALIGN.LEFT, Pt(0), True)
+        for r2 in p.runs:
+            r2.font.name = head_f; set_chinese_font(r2, head_f)
+        # ② 正文（标题下 → 分隔线上 区间内排布，与 2×2 同：标题行后 BAND_GAP 起正文）
+        gt = top + title_band
+        hl_y = y + ch - VPAD - concl_h          # 结论锚定卡底固定偏移
+        div_y = hl_y - CONCL_GAP                # 分隔线恒在结论上方固定间距
+        yy = gt + BAND_GAP                       # 恢复标题→正文间距（修回归：此前误删为 yy=gt）
+        for ln in c.get('lines', []):
+            nr = bullet_rows(ln)
+            hl_i = nr * lh
+            tf = tb_box(slide, ix, yy, iw, hl_i)
+            tf.vertical_anchor = MSO_ANCHOR.TOP
+            p = run_text(tf, "· " + ln, BS, False, cd['body_color'], PP_ALIGN.LEFT, Pt(0), True)
+            for r2 in p.runs:
+                r2.font.name = body_f; set_chinese_font(r2, body_f)
+            yy += hl_i + BULLET_GAP
+        # ④ 分隔线（锚定卡底，同行三卡对齐）
+        card_divider(slide, ix, div_y, iw, cd.get('div_line', cd['line']), pt=0.75, full=True)
+        # ④ 结论（居中单行，无 icon，与 2×2 一致）
+        tf = tb_box(slide, ix, hl_y, iw, concl_h)
+        tf.vertical_anchor = MSO_ANCHOR.MIDDLE
+        p = run_text(tf, c['hl'], CONCL_SZ, True, cd['concl_color'], PP_ALIGN.CENTER, Pt(0), True)
+        for r2 in p.runs:
+            r2.font.name = body_f; set_chinese_font(r2, body_f)
+
+    # 列间连接线（可选，默认开启）
+    if connect:
+        dot_d = 0.12
+        for i in range(len(cards) - 1):
+            mid_x = sx + i * (cw2 + gap) + cw2 + gap / 2.0
+            rect(slide, mid_x - 0.005, sy, 0.01, ch, fill=cd.get('div_line', cd['line']), line=None)
+            rect(slide, mid_x - dot_d / 2.0, sy + ch / 2.0 - dot_d / 2.0, dot_d, dot_d,
+                 fill=cd['accent'], line=None)
     return y_end
 
 
@@ -2201,10 +2347,11 @@ def layout_two_column(slide, skin, content, y0=1.88, y_end=6.30,
         col_h.append(header_h + (0.10 if underline else 0.0) + rows_h + note_h + 2 * pad)
     max_inner = max(inner_w)
     max_h = max(col_h)
-    # ── 布局约束：列可用宽封顶 + 70% 下限（与 card_grid 同口径，防飘卡/大留白）──
+    # ── 布局约束：列可用宽封顶 + 页宽80%保底（自动计算为主，短内容不塌卡）──
     col_avail = (cw - gap) / 2.0
     cw2 = min(max_inner + 2 * pad, col_avail)
-    cw2 = max(cw2, 0.70 * col_avail)                  # 下限=70%·列可用宽（两列页 col_avail 固定，无 3 列冲突）
+    pair_min = 0.80 * PAGE_W                          # 双卡整体最小宽 = 页宽 80% = 10.667″
+    cw2 = max(cw2, (pair_min - gap) / 2.0)            # 占不满 80% 时撑到 80% 对应单列宽（不写死；长内容自动超此值）
     max_h = min(max_h, y_end - y0)
     # ── 一对在内容区水平居中 ──
     grid_w = 2 * cw2 + gap
@@ -2212,7 +2359,8 @@ def layout_two_column(slide, skin, content, y0=1.88, y_end=6.30,
     sy = y0 + (y_end - y0 - max_h) / 2.0
     for i, col in enumerate(cols):
         cx = sx + i * (cw2 + gap)
-        content_card(slide, cx, sy, cw2, max_h, cd['line'], line_w=cd.get('line_w', 1.25),
+        content_card(slide, cx, sy, cw2, max_h, cd.get('two_col_border', cd['line']),
+                     line_w=cd.get('line_w', 1.25),
                      shadow_alpha=cd.get('shadow_alpha', 8000),
                      shadow_blur=cd.get('shadow_blur', 90000),
                      shadow_dist=cd.get('shadow_dist', 20000))
@@ -2226,13 +2374,20 @@ def layout_two_column(slide, skin, content, y0=1.88, y_end=6.30,
         area_top = sy + (0.80 if underline else 0.70)
         note = notes[i] if (notes and i < len(notes)) else None
         area_bot = sy + max_h - (0.60 if note else 0.16)
-        blk = len(items) * (lh(BS) + 0.12)
-        if blk > (area_bot - area_top):
-            blk = area_bot - area_top
-        by = (area_top + area_bot) / 2 - blk / 2
+        # 框内段落高度自动计算：在 (area_top, area_bot) 内按段数均匀铺满卡高，
+        # 每栏各自均分 → 左多行/右少行都能填满等高卡（ChatGPT 双栏思路落地）
+        n_items = len(items)
+        if n_items == 1:
+            centers = [(area_top + area_bot) / 2.0]
+        elif n_items > 1:
+            seg = (area_bot - area_top) / n_items
+            centers = [area_top + (j + 0.5) * seg for j in range(n_items)]
+        else:
+            centers = []
+        rh = lh(BS) + 0.04
         for j, it in enumerate(items):
-            iy = by + j * (lh(BS) + 0.12)
-            tf = tb_box(slide, cx + pad, iy, cw2 - 2 * pad, lh(BS) + 0.04)
+            iy = centers[j] - rh / 2.0
+            tf = tb_box(slide, cx + pad, iy, cw2 - 2 * pad, rh)
             tf.vertical_anchor = MSO_ANCHOR.MIDDLE
             if right_flow and i == 1:
                 phase = it.split("：")[0].split(":")[0].strip()

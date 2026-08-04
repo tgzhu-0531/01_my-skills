@@ -5,6 +5,60 @@
 > 起始日期 2026-07-31（更早的迭代历史不再追溯）。
 > 维护节奏：**每天收尾时统一总结当天一次**，不必每次改动都记（省时；当天多次改动合并成一条或按类型归并）。
 
+## 2026-08-04
+
+### 修改（双栏页三处收敛：暗边框 + 段落自动均分 + 标题对齐 h1，2026-08-04 收尾）
+- **双栏卡边框改近背景暗色（仅企业风·皮肤键驱动）**：原 `layout_two_column` 的 `content_card` 边框直接取 `cd['line']`（企业=`#D2D8DC` 浅灰，深蓝底上偏亮抢戏）→ 改为 `cd.get('two_col_border', cd['line'])`（`two_col_border` 缺省回落原 `line`）。`ENTERPRISE_SKIN['card']` 新增 `two_col_border=RGBColor(0x22,0x40,0x5F)`（中性暗蓝，比背景亮一档、存在不刺眼，契合"颜色退、线宽进"）。锋芒/文质/商务未设此键 → 自动回落各自 `cd['line']`，互不受影响（局部改动不越界）。→ `common.py::layout_two_column` / `enterprise.py::ENTERPRISE_SKIN`
+- **双栏框内段落高度自动计算（等框高 + 内容区均匀铺满）**：原右栏 4 行用"固定行距 + 垂直居中"，只聚卡中间、上下留大空当；改为在 `(area_top, area_bot)` 内按段数 `n_items` 均匀切分 `seg=(area_bot-area_top)/n_items`、各行中心落在 `area_top+(j+0.5)*seg`，左 7 行/右 4 行各自等距、同区铺满等高卡（ChatGPT 双栏"定框高后分段自适应"思路落地，消除右栏空荡）。→ `common.py::layout_two_column`
+- **双栏页主标题 28pt 对齐 h1（消除跨页跳变）**：原 `enterprise._action_title` 写死 `Pt(20)`，而 `section_header` 的 H1 用 `TYPOGRAPHY['h1']=(28,True)`，混排时同级别标题 20↔28 跳变；改为 `Pt(28)` 与全 deck 主标题一致。→ `enterprise.py::_action_title`
+- **双栏卡宽 80% 页宽保底（自动计算为主·不写死）**：原下限 `cw2=max(cw2, 0.70*col_avail)`（70% 列可用宽）在短内容演示下塌成双卡占页宽 62.3% 窄卡；改为「双卡整体 ≥ 页宽 80%」对应单列下限 `pair_min=0.80*PAGE_W; cw2=max(cw2,(pair_min-gap)/2.0)`——内容长仍自动撑到列宽(双卡 88%)，短内容兜底 80%，左右上下始终按 80% 布局。全局改 `layout_two_column`（版式行为·四风格双栏页同受益），契合"卡宽卡高测最大值统一"铁律。→ `common.py::layout_two_column`
+- **验证**：重生成 `交付物与职责分工_二栏_引擎版.pptx`（走真实引擎 `new_deck` 克隆模板 + `add_content` 品牌版式 `layout[6]` + `two_column` 传 `left_note/right_note` + `bottom_gold`）；反向读 XML 确认双卡边框 `#22405F`/`1.25pt`、主标题 28pt、左 7 行行距 0.323″ 与右 4 行 0.565″ 各自均匀铺满、不超页；`validate_deck` PASS(0)。
+- **遗留（未改·待授权）**：`layout_two_column` 文本框宽 `cw2-2*pad` 与卡内宽 `max_inner+2*pad` 抵消 → 文字宽=框宽零余量，长条目临界换行（演示右栏日期已精简规避）。属第三处改动，超出本次"只改两处"授权，待用户确认后再补文本框缓冲（如 `cw2` 多放 0.1″）。
+
+### 新增（三列专用骨架 layout_three_column + 企业风 three_column 包装，2026-08-04 下午）
+- **背景**：P11（附则·施行）原为 `card_grid(cols=2)` 渲染成 2+1，与"三列并排"目标不符；用户要求把三列单独抽一个骨架，参考 ChatGPT 双栏三原则（等框高/自动分段/暗色框线）。
+- **新增 `common.py::layout_three_column`**：单排三卡、等宽、等框高，独立于 `layout_card_grid` 的 2×N 网格。几何调整（专家）：卡宽锁定 **页宽 92%**（12.27″，gap 0.35″，单卡 ≈3.86″）——三列比二列更窄，若沿用 80% 单卡内文宽仅 ~2.84″ 必折行，92% 时 ~3.38″ 可读性更好且留 4% 边距；其余原则与双栏/2×2 同源（等框高取本页最大、内容卡内分段、暗边框 `two_col_border`=#22405F、分隔线锚定卡底同行对齐）。
+- **三列增强项（已撤销·与 2×2 统一）**：① 标题下青色短下划线；② 结论 `icon`；③ 列间连接线——上述三处为三列专属装饰，2×2(card_grid) 均无。用户要求"保持和 2×2 一样、整洁统一"，故全部去除：`layout_three_column` 删标题下划线块与 icon（结论=纯 `c['hl']`），`connect` 默认 `True`→`False`（列间连接线默认关闭）；`enterprise.three_column` 同步 `connect=False` 并改 docstring 标注"与 2×2 一致（无下划线/无 icon/无连接线）"；P11 runner 删三卡 `icon` 字段。
+- **新增 `enterprise.py::three_column` 薄壳**：标题区委托 `section_header`（28pt H1 + 18pt label，与全站一致），再调 `layout_three_column`，并在 `from common import` 增加 `layout_three_column`。
+- **调用**：P11 runner 由 `card_grid(cols=2,…)` 改为 `three_column(title,label,cards=[{tag,title,lines,hl}×3], n,total)`（无 icon）；`card_grid` 仍负责 2×2/2×3。
+- **验证**：重生成 `互联网平台价格行为规则_企业风_12页_v4.pptx`；反向读 XML 确认 P11 = 三卡 x=0.53/4.74/8.94、宽 3.855″、等距 4.206″、边框 #22405F、**仅剩 3 条卡内底部暗分隔线(#44586C，与 2×2 同源)**、无列间连接线/无标题下划线/无 icon、溢出 0；`validate_deck` PASS(0)。
+
+### 修复（框内「标题↔正文」间距层级倒挂，2026-08-04 晚）
+- **问题**：实测 `_v4.pptx` 框内 标题→正文（P11=0.00″ / P10=0.08″）**小于** 段落↔段落（0.22″），违反 `SKILL §4.12-7` 层级「标题↔正文 > 段间 > 行距」。根因：①三列回归——第四轮删标题下划线时把 `yy = gt + BAND_GAP + UNDER_GAP` 误改为 `yy = gt`，标题→正文间距整段丢失；②两骨架 `BAND_GAP`（三列 0.10 / 2×2 0.08）本就 < `BULLET_GAP`(0.22)，原本逆层级；③三列 `card_h` 多算一个 `+ BAND_GAP`（`group_h` 已含首行 `BAND_GAP`），卡高虚高 0.10″。
+- **修复（全在 `common.py`，runner 不动，三列与 2×2 统一）**：
+  - 三列 `yy = gt` → `yy = gt + BAND_GAP`（恢复标题间距，修回归）。
+  - 三列 `card_h` 删多余 `+ BAND_GAP`，与 `card_grid` 公式对齐（`title_band + group_h + 2*VPAD`）。
+  - 两骨架 `BAND_GAP` 0.10/0.08 → **0.28**（> `BULLET_GAP` 0.22，立「标题↔正文 > 段间」层级；行距≈0.208 仍最小）。`BULLET_GAP=0.22`、`BODY_LS=1.25` 不动。
+- **关于 SKILL「间距区间 0.10~0.16」**：该软指引被更硬的「层级」规则覆盖，且 skill 自身 `BULLET_GAP=0.22` 已超该区间；12pt×1.25 行距≈0.208 使「段间≥0.22、标题↔正文>0.22」无法塞回 0.10~0.16（否则需压垮行距，不可读），故以层级为硬约束、取值 0.28。
+- **验证**：重生成 `互联网平台价格行为规则_企业风_12页_v5.pptx`；反向读 XML 确认 P11 标题→正文=0.279″、P10=0.28″，均 > 段落↔段落=0.221/0.22″（层级 True）、溢出 0、`validate_deck` PASS(0)、12 页。
+- **约束（重要·同晚发现）**：`BAND_GAP=0.28` 下，**双行 2×2 每卡正文建议 ≤2 条**——3 条卡自然高=2.465″ 会超过双行 `fit_cap`=2.265″（y0=1.6,y_end=6.45,gap=0.32），`ch` 被砍高后正文(顶锚定)与分隔线/结论(卡底锚定)碰撞 → 正文压线重叠 0.12″（实测 P3/P4/P5/P8/P12 共14张3条卡全中招）。**单行/2卡布局（如 P10 行业自律·轻微违法，rows=1，卡高无封顶）不受限，可放3条**。几何上双行2×2 的3条卡物理卡高容不下 `BAND_GAP>0.08`（标题0.41+正文1.07+分隔0.24+结论0.27+内边距0.20=2.185 为下限，加 BAND_GAP 即破上限）。→ 修复方式：把超量页的3条卡合并为2条（忠实合并相关要点），引擎未动；产 `…_v6.pptx`，7个 card_grid 页重叠卡数=0。
+
+### 重构（三列原语 three_column 四风格对齐 + section_header 副标保护，2026-08-04 收尾）
+- **问题**：`layout_three_column`（单排三卡骨架）虽在 `common.py` 共享，但只有 **enterprise** 引擎暴露了 `three_column` wrapper；锋芒/文质/商务三引擎既未导入 `layout_three_column`，也无该原语 → 三列页只能企业风用，与"四风格一致"目标不符。另：business/fengmang 的 `section_header` 内部 `r.text = "  " + sub` **未做 None 保护**（wenzhi 已有 `if sub:`、enterprise `sub` 有默认值），three_column 省略副标（传 `sub=None`）会 `TypeError`。
+- **修复（引擎层·薄壳，不改骨架几何）**：
+  - 锋芒/文质/商务三引擎 `from common import` 增加 `layout_three_column`；各自新增 `three_column(slide, title=None, label=None, cards=None, n=None, total=None, connect=False)` 薄壳，镜像 enterprise：标题区复用本引擎 `section_header`（传 `sub=None` 跳过副标）、再调 `layout_three_column(slide, <本引擎>_SKIN, cards, y0=1.65, y_end=6.45, connect=connect)`；背景与 `card_grid` 同处理（锋芒 `set_bg(BG)` / 文质 `WEN_BG`+`_accent_box` / 商务依赖调用方 `set_bg(WHITE)`）。
+  - business/fengmang `section_header` 给 `r.text = "  " + sub`（business）/ `"    " + sub`（fengmang）加 `if sub:` 保护，与 wenzhi/enterprise 一致 → 四风格 `section_header(sub=None)` 均安全。
+  - 三列主题色自动对齐：边框/分隔线取各皮肤 `cd.get('two_col_border'/'div_line', cd['line'])` 回落值，序号/结论色取 `num_color`/`concl_color`，无硬编码。
+- **SKILL.md 同步**：「已骨架化」清单 12→13（补 `layout_three_column`）；原语表加「单排三列」行（`three_column` / — / `layout_three_column`）；组件型调用约定补 `three_column`（标注四风格均已支持、内部自带 section_header）。
+- **验证**：三风格各生成单页三列（3 张 `{tag,title,lines,hl}` 卡），反向读 XML 确认 3 卡 x=0.53/4.74/8.94、宽 3.855″、等宽等距、分隔线锚卡底，与企业风 P11 几何完全一致；导入无异常、文件保存成功。
+
+### 修复（文质风 three_column 重复绘制 _accent_box + Genie Ontology 文质风真本，2026-08-04 收尾）
+- **问题（反向读 XML 发现）**：文质风 `three_column` wrapper 顶部无条件 `_accent_box(slide)`，而 `title` 给定时又调 `section_header`（其内也画 `_accent_box`）→ 三列页右上角品牌竖条被画**两次**（双栏页因调用方 `dedupe_accent` 正常，唯三列页漏）。business/fengmang 的 `three_column` 顶部无 `_accent_box`（仅 `set_bg`/依赖调用方），故无此问题。
+- **修复**：`wenzhi.three_column` 把 `_accent_box(slide)` 从顶部无条件调用移入 `else`（无 title）分支；`title` 给定时由 `section_header` 统一负责背景+品牌条。几何/视觉零变化，仅消除重复形状。→ `engines/wenzhi.py`
+- **真本验证（文质风 10 页）**：用公众号《当语义层不再靠人来建：Databricks Genie Ontology 的第三条路》（小鱼不卡壳 2026-06-24）生成文质风 10 页（`gen_genie_ontology_wenzhi.py` / 产物 `Databricks Genie Ontology 文质风 10页.pptx`）。反向 XML 核查：12 页？实为 10 页；0 溢出；P1/P10 含二维码、页码 1/10…10/10 齐全；**P3/P9 three_column 各 3 张等宽卡@3.855″、accent 仅 1 个（确认重复已消除）**；P2–P8 two_column 各 2 张等宽卡；P9 页级金句@6.65″ 在三列卡(止 6.45″)下方无重叠；`validate_deck` PASS(0)。→ 证明第七轮补的 `three_column` 在文质风真实闭环。
+- **沉淀**：runner 存档 `references/runner-example-wenzhi.py`（首个文质风 (prs,...) 整本范式样例，含 cover/two_column/three_column/hero_questions 用法），`py_compile` 通过。README 参考索引可补该样例。
+
+### 修复（P10 重叠 + 封面二维码/署名参数化，2026-08-04 续）
+- **P10 重叠（用户报告）**：`hero_questions` 把二维码画在 y=4.62，而本文 `questions` 文案约 70 字 → 渲染成 4 行 36pt 大字(y=2.28→4.88)压住二维码起点。引擎设计假设 questions 是 1–2 行短句。→ 弃用 `hero_questions`，P10 改 `section_header` + 手写居中收尾块（34pt 大字 2 行论点 + 强调短线 + 15pt 金句「压舱石」），无二维码、无重叠。产物 `_v2`。
+- **封面硬编码「天戈朱」硬伤（同源）**：`cover()`→`cover_qr`、及 `cover_story`/`hero_questions` 均硬编码「天戈朱」公众号二维码(skill 资产 `assets/qrcode.jpg`)+署名，对其它作者文章是事实错误。→ **引擎参数化（向后兼容，默认仍天戈朱）**：
+  - `cover_qr(style, label="天戈朱", qr_path=None)`：`qr_path=False` 整段跳过（不画码不写扫码署名）；否则透传 `qr_path` 给 `add_qr`（None=默认资产）。
+  - `cover(..., qr_label="天戈朱", qr_path=None, author=None)`：调 `cover_qr(label=qr_path...)`；`author` 给则在标签下行显作者署名。
+  - `cover_story(...)` 改为委托 `cover`（去掉自身硬编码的 add_qr+天戈朱署名）。
+  - `hero_questions(...)` 增加 `qr_label="天戈朱"`，署名用 `f"扫码关注「{qr_label}」"`。
+  - `validate_deck` 封面二维码检查放宽：无码但封面含「公众号/作者/来源」署名文本时降级为告警（不 fail）；label 分类词检查跳过封面(i==1)。
+- **本 deck 应用**：P1 `cover(..., tags=["语义层","Databricks","Agent 时代"], author="小鱼不卡壳 · 公众号文章", qr_path=False)` → 封面显示正确作者、无天戈朱码。`validate_deck` PASS（仅 1 条已豁免告警）。产物 `_v3`（旧文件被 PowerPoint 锁占，递增命名）。
+- **沉淀**：`references/runner-example-wenzhi.py` 覆盖为含 `qr_path=False` 封面参数化示例的最新版，`py_compile` 通过。
+
 ## 2026-08-01
 
 ### 修复（金句统一 + 卡框高重构 + 企业副标题换行，2026-08-01 收尾）
@@ -153,6 +207,12 @@
 - **`gen_styles_P1_P3.py` CARDS**：每条 bullet 改写为 ≤17 字 1 行金句（保留原意，标题/结论不动）；`BULLET_GAP/DIV_GAP/CONCL_GAP` 微调为 0.10 更透气。
 - **验证（`_verify_p3v3.py` 预期改 22/14/14）**：四风格卡内上下留白 **0.33/0.26″**、内容占卡高 **71~74%**（原 93%）；序号 22pt 粗 / 标题 14pt 粗 MIDDLE / 8 行 1‑line bullet / 结论 14pt(长文 13) 粗 MIDDLE 居中；OVERFLOW 0、卡底 6.38 < 金句线 6.50；ALL_OK。
 - **经验**：卡片"紧凑/换行"根因常是**文案过长**而非字号；2×2 宽胖卡里长中文 bullet 必折行，缩字号救不了，须缩短文案到 1 行或放宽卡宽。下次此类迭代先量 bullet 字数再定方案。
+
+### 验证（第八轮：锋芒风全本生成，确认 three_column 等四风格对齐生效，2026-08-04 收尾）
+- **背景**：第七轮补齐锋芒/文质/商务的 `three_column` wrapper + `section_header` 副标 `None` 保护后，需真本验证锋芒风能整本跑通、且 P11 三列真实渲染（此前三列仅企业风有 wrapper）。
+- **新增 `references/runner-example-fengmang.py`（锋芒风 per-article runner 范式）**：镜像企业风 `runner-example-enterprise.py`，适配锋芒 API 差异——`cover(title, subtitle, tags, total, n)` 无 `subtitle2/date_str` → `tags` 承载副标与文号；`section_header` 顺序（title, label, sub）；`definition_compare` 签名与企业风一致；`two_column` 无自带页眉须先 `section_header`。内容与企业风 `_v6` **完全一致**（同款 2 行卡合并，规避双行 2×2 压线）。
+- **验证**：生成 `互联网平台价格行为规则_锋芒风_12页.pptx`；`validate_deck` PASS(0)、OVERFLOW 0；反向读 XML 确认 12 页、封面含二维码、12 页均有页码；2×2 网格页（P2/3/4/5/8/12）各 **4 张等宽卡（宽 5.17″）**、P10 单列 2 卡；**P11 = 3 张等宽卡（宽 3.855″）**，与企业风 P11 几何一致 → `three_column` 四风格真实可用；P6 `definition_compare`、P7/P9 `two_column` 正常。
+- **沉淀**：两份 runner 作为「per-article runner 范式」参考样例存入 `references/`（企业风 + 锋芒风），README §七 参考索引已登记；四风格对齐经真本验证闭环。
 
 ## 2026-07-31
 

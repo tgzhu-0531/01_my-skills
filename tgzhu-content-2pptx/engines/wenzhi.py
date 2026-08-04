@@ -17,7 +17,7 @@ from common import (WHITE, SP_UNIT, SP_GROUP, SP_CARD_BODY, SP_RUN_DEF,
                     shape_bottom_in, GOLD_LINE_Y, GOLD_TEXT_Y,
                     fit_content_font, fit_single_line, solve_card_fonts, fit_gaps,
                     vcenter, CANVAS_TOP, CANVAS_BOT,
-                    layout_loop_page, layout_timeline, layout_card_grid, layout_compare,
+                    layout_loop_page, layout_timeline, layout_card_grid, layout_three_column, layout_compare,
                     layout_value_grid, layout_profile_warning, layout_six_step,
                     layout_talent_strip, layout_transition_rows, layout_hero_questions,
                     layout_two_column, layout_summary)
@@ -207,7 +207,8 @@ def _shadow_card(slide, x, y, w, h):
 # ═══════════════════════════════════════════
 # 版式原语
 # ═══════════════════════════════════════════
-def cover(slide, title, subtitle, tags=None, total=1, n=1):
+def cover(slide, title, subtitle, tags=None, total=1, n=1,
+          qr_label="天戈朱", qr_path=None, author=None):
     slide.background.fill.solid()
     slide.background.fill.fore_color.rgb = WEN_BG
     _accent_box(slide)
@@ -220,9 +221,12 @@ def cover(slide, title, subtitle, tags=None, total=1, n=1):
     sub_tf = cover_line(slide, 0.8, accent_y + 0.04 + 0.20, 11.73, subtitle, 22,
                         WEN_PALETTE["sub_cover"], False, PP_ALIGN.CENTER)
     if tags:
-        cover_line(slide, 0.8, shape_bottom_in(sub_tf) + 0.16, 11.73,
-                   " · ".join(tags), 14, WEN_PALETTE["tag"], False, PP_ALIGN.CENTER)
-    cover_qr(slide, "wenzhi")
+        tag_tf = cover_line(slide, 0.8, shape_bottom_in(sub_tf) + 0.16, 11.73,
+                            " · ".join(tags), 14, WEN_PALETTE["tag"], False, PP_ALIGN.CENTER)
+    if author:
+        base_y = shape_bottom_in(tag_tf) if tags else shape_bottom_in(sub_tf)
+        cover_line(slide, 0.8, base_y + 0.20, 11.73, author, 14, WEN_MUTE, False, PP_ALIGN.CENTER)
+    cover_qr(slide, "wenzhi", label=qr_label, qr_path=qr_path)
     add_page_number(slide, n, total, WEN_MUTE)
 
 def section_header(slide, h1, label, sub, n=None, total=None):
@@ -341,6 +345,18 @@ def card_grid(slide, cards, cols=2, n=None, total=None):
     layout_card_grid(slide, WENZHI_SKIN, cards, cols=cols, y0=1.65, y_end=6.38)
     if n and total:
         add_page_number(slide, n, total, WEN_MUTE)
+def three_column(slide, title=None, label=None, cards=None, n=None, total=None, connect=False):
+    """三列（文质风，委托通用 layout_three_column）：单排三卡、等宽等框高，与 2×2 一致（无下划线/无 icon/无连接线）。
+    标题区复用 section_header（与全站一致）；n/total 由 section_header 绘制页码。"""
+    slide.background.fill.solid()
+    slide.background.fill.fore_color.rgb = WEN_BG
+    if title:
+        section_header(slide, title, label, None, n=n, total=total)
+    else:
+        _accent_box(slide)
+        if n and total:
+            add_page_number(slide, n, total, WEN_MUTE)
+    layout_three_column(slide, WENZHI_SKIN, cards, y0=1.65, y_end=6.45, connect=connect)
 def summary(slide, title, sub, metrics=None, quote=None, n=None, total=None):
     """总结页：公共骨架 layout_summary。"""
     slide.background.fill.solid()
@@ -424,15 +440,11 @@ def add_page(prs, h1, label, sub):
 # 文质风 · 整页富原语（FDE 沉淀：内容→版式原语）
 #   每个原语自含 section_header + 底部金句，生成器只传内容。
 # ═══════════════════════════════════════════
-def cover_story(prs, title, subtitle, tags, author, n, total):
-    """封面：原生 cover + 作者行 + 公众号二维码。"""
+def cover_story(prs, title, subtitle, tags, author, n, total, qr_label="天戈朱", qr_path=None):
+    """封面：原生 cover（含标题/副标/标签/作者行）+ 可配置二维码。"""
     s = add_blank(prs)
-    cover(s, title, subtitle, tags=tags, total=total, n=n)
-    tf = tb_box(s, X0, 4.65, CW_FULL, 0.28)
-    run_text(tf, author, 14, False, WEN_MUTE, PP_ALIGN.CENTER, Pt(0), True)
-    add_qr(s, (13.333 - 0.95) / 2, 5.50, 0.95)   # 公众号居底
-    tf = tb_box(s, X0, 6.58, CW_FULL, 0.26)
-    run_text(tf, "扫码关注「天戈朱」", 12, False, WEN_MUTE, PP_ALIGN.CENTER, Pt(0), True)
+    cover(s, title, subtitle, tags=tags, total=total, n=n,
+          qr_label=qr_label, qr_path=qr_path, author=author)
     return s
 
 def timeline_page(prs, h1, label, sub, items, emphasis_teal=None, emphasis_amber=None,
@@ -550,12 +562,12 @@ def transition_rows(prs, h1, label, sub, intro, rows, gold, n=None, total=None):
         bottom_gold(s, gold, n, total)
     elif n and total:
         add_page_number(s, n, total, WEN_MUTE)
-def hero_questions(prs, h1, label, sub, lead, questions, signature, n=None, total=None):
+def hero_questions(prs, h1, label, sub, lead, questions, signature, n=None, total=None, qr_label="天戈朱"):
     """结语问答：公共骨架 layout_hero_questions + 二维码（氛围装饰留引擎层）。"""
     s = add_page(prs, h1, label, sub)
     layout_hero_questions(s, WENZHI_SKIN, {"lead": lead, "questions": questions,
                                            "signature": signature}, y0=1.88, y_end=6.30)
     add_qr(s, (13.333 - 1.05) / 2.0, 4.62, 1.05)
     tf = tb_box(s, X0, 5.76, CW_FULL, 0.26)
-    run_text(tf, "扫码关注「天戈朱」", 12, False, WEN_MUTE, PP_ALIGN.CENTER, Pt(0), True)
+    run_text(tf, f"扫码关注「{qr_label}」", 12, False, WEN_MUTE, PP_ALIGN.CENTER, Pt(0), True)
     add_page_number(s, n or 10, total or 10, WEN_MUTE)
